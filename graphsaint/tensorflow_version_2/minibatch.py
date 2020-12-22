@@ -1,6 +1,6 @@
 from graphsaint.globals import *
 import math
-from graphsaint.tensorflow_version.inits import *
+from graphsaint.tensorflow_version_2.inits import *
 from graphsaint.utils import *
 from graphsaint.graph_samplers import *
 from graphsaint.norm_aggr import *
@@ -12,9 +12,6 @@ import numpy as np
 import time
 
 import pdb
-
-
-
 
 class Minibatch:
     """
@@ -65,7 +62,7 @@ class Minibatch:
         self.subgraphs_remaining_data = []
         self.subgraphs_remaining_nodes = []
         self.subgraphs_remaining_edge_index = []
-        
+
         self.norm_loss_train = np.zeros(self.adj_train.shape[0])
         # norm_loss_test is used in full batch evaluation (without sampling). so neighbor features are simply averaged.
         self.norm_loss_test = np.zeros(self.adj_full_norm.shape[0])
@@ -74,7 +71,7 @@ class Minibatch:
         self.norm_loss_test[self.node_val] = 1./_denom
         self.norm_loss_test[self.node_test] = 1./_denom
         self.norm_aggr_train = np.zeros(self.adj_train.size)
-       
+
         self.sample_coverage = train_params['sample_coverage']
         self.dropout = train_params['dropout']
         self.deg_train = np.array(self.adj_train.sum(1)).flatten()
@@ -115,7 +112,7 @@ class Minibatch:
         self.norm_aggr_train = np.zeros(self.adj_train.size).astype(np.float32)
 
         # For edge sampler, no need to estimate norm factors, we can calculate directly.
-        # However, for integrity of the framework, we decide to follow the same procedure for all samplers: 
+        # However, for integrity of the framework, we decide to follow the same procedure for all samplers:
         # 1. sample enough number of subgraphs
         # 2. estimate norm factor alpha and lambda
         tot_sampled_nodes = 0
@@ -207,7 +204,7 @@ class Minibatch:
             feed_dict.update({self.placeholders['norm_loss']: self.norm_loss_test})
         else:
             feed_dict.update({self.placeholders['norm_loss']: self.norm_loss_train})
-        
+
         _num_edges = len(adj.nonzero()[1])
         _num_vertices = len(self.node_subgraph)
         _indices_ph = np.column_stack(adj.nonzero())

@@ -1,7 +1,7 @@
 from graphsaint.globals import *
-from graphsaint.tensorflow_version.inits import *
-from graphsaint.tensorflow_version.model import GraphSAINT
-from graphsaint.tensorflow_version.minibatch import Minibatch
+from graphsaint.tensorflow_version_2.inits import *
+from graphsaint.tensorflow_version_2.model import GraphSAINT
+from graphsaint.tensorflow_version_2.minibatch import Minibatch
 from graphsaint.utils import *
 from graphsaint.metric import *
 from tensorflow.python.client import timeline
@@ -92,6 +92,7 @@ def prepare(train_data,train_params,arch_gcn):
     adj_full_norm = adj_norm(adj_full)
     num_classes = class_arr.shape[1]
 
+    print("num_classes: " + str(num_classes))
     placeholders = construct_placeholders(num_classes)
     minibatch = Minibatch(adj_full_norm, adj_train, role, class_arr, placeholders, train_params)
     model = GraphSAINT(num_classes, placeholders,
@@ -117,7 +118,8 @@ def prepare(train_data,train_params,arch_gcn):
 
     misc_stats = tf.compat.v1.summary.merge([_misc_val_f1_micro,_misc_val_f1_macro,_misc_train_f1_micro,_misc_train_f1_macro,
                     _misc_time_per_epoch,_misc_size_subgraph])
-    summary_writer = tf.compat.v1.summary.FileWriter(log_dir(args_global.train_config,args_global.data_prefix,git_branch,git_rev,timestamp), sess.graph)
+    #summary_writer = tf.compat.v1.summary.FileWriter(log_dir(args_global.train_config,args_global.data_prefix,git_branch,git_rev,timestamp), sess.graph)
+    summary_writer = tf.summary.create_file_writer(log_dir(args_global.train_config,args_global.data_prefix,git_branch,git_rev,timestamp))
     # Init variables
     sess.run(tf.compat.v1.global_variables_initializer())
     return model,minibatch, sess, [merged,misc_stats],ph_misc_stat, summary_writer
@@ -240,4 +242,5 @@ def train_main(argv=None):
     return ret
 
 if __name__ == '__main__':
+    tf.compat.v1.disable_eager_execution()
     tf.compat.v1.app.run(main=train_main)

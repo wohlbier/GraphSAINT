@@ -1,5 +1,5 @@
 import tensorflow as tf
-from graphsaint.tensorflow_version.inits import glorot,zeros,trained,ones,xavier,uniform
+from graphsaint.tensorflow_version_2.inits import glorot,zeros,trained,ones,xavier,uniform
 from graphsaint.globals import *
 
 F_ACT = {'I': lambda x:x,
@@ -88,7 +88,7 @@ class JumpingKnowledge(Layer):
             if self.bias == 'norm':
                 self.vars['offset'] = zeros([1,self.dim_out],name='offset')
                 self.vars['scale'] = ones([1,self.dim_out],name='scale')
-        
+
 
     def _call(self, inputs):
         feats_l,idx_conv = inputs
@@ -162,8 +162,8 @@ class HighOrderAggregator(Layer):
         return vw
 
     def _call(self, inputs):
-        # vecs: input feature of the current layer. 
-        # adj_partition_list: the row partitions of the full graph adj 
+        # vecs: input feature of the current layer.
+        # adj_partition_list: the row partitions of the full graph adj
         #       (only used in full-batch evaluation on the val/test sets)
         vecs, adj_norm, len_feat, adj_partition_list, _ = inputs
         vecs = tf.nn.dropout(vecs, 1 - (1-self.dropout))
@@ -174,7 +174,7 @@ class HighOrderAggregator(Layer):
                 ans_partition = [tf.sparse.sparse_dense_matmul(adj,vecs_hop[o+1]) for adj in adj_partition_list]
                 ans2 = tf.concat(ans_partition,0)
                 vecs_hop[o+1]=tf.cond(pred=self.is_train,true_fn=lambda: tf.identity(ans1),false_fn=lambda: tf.identity(ans2))
-        vecs_hop = [self._F_nonlinear(v,o) for o,v in enumerate(vecs_hop)]    
+        vecs_hop = [self._F_nonlinear(v,o) for o,v in enumerate(vecs_hop)]
         if self.aggr == 'mean':
             ret = vecs_hop[0]
             for o in range(len(vecs_hop)-1):
@@ -240,7 +240,7 @@ class AttentionAggregator(Layer):
 
 
     def _call(self, inputs):
-    
+
         vecs, adj_norm, len_feat, adj_partition_list, dim0_adj_sub = inputs
         adj_norm = tf.cond(pred=self.is_train,true_fn=lambda: adj_norm,false_fn=lambda: tf.sparse.concat(axis=0,sp_inputs=adj_partition_list))
         vecs_do1 = tf.nn.dropout(vecs, 1 - (1-self.dropout))
@@ -252,7 +252,7 @@ class AttentionAggregator(Layer):
             ret_self = tf.nn.batch_normalization(ret_self,mean,variance,self.vars['order0_offset'],self.vars['order0_scale'],1e-9)
         if self.order == 0:
             return ret_self
-        
+
         # the aggr below only applies to order 1 layers
 
         ret_neigh_l_subg = list()
@@ -267,14 +267,14 @@ class AttentionAggregator(Layer):
                             + self.vars['att_bias_1_h{}'.format(i)])
             vw_self_att.append(tf.reduce_sum(input_tensor=vw_neigh[i]*self.vars['attention_0_h{}'.format(i)],axis=-1)\
                             + self.vars['att_bias_0_h{}'.format(i)])
-        
+
         for i in range(self.mulhead):
             adj_weighted = self._F_edge_weight(adj_norm,vw_neigh_att[i],vw_self_att[i],offset=0)
             ret_neigh_i = self.act(tf.sparse.sparse_dense_matmul(adj_weighted,vw_neigh[i])) \
                             + self.vars['order1_bias_h{}'.format(i)]
             ret_neigh_l_subg.append(ret_neigh_i)
 
-    
+
         for _adj in adj_partition_list:
             ret_neigh_la = list()
             for i in range(self.mulhead):
@@ -295,4 +295,3 @@ class AttentionAggregator(Layer):
         else:
             raise NotImplementedError
         return ret
-

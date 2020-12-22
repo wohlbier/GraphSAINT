@@ -1,7 +1,7 @@
 import tensorflow as tf
 from graphsaint.globals import *
-from graphsaint.tensorflow_version.inits import *
-import graphsaint.tensorflow_version.layers as layers
+from graphsaint.tensorflow_version_2.inits import *
+import graphsaint.tensorflow_version_2.layers as layers
 from graphsaint.utils import *
 import pdb
 
@@ -31,7 +31,7 @@ class GraphSAINT:
         self.jk = None if 'jk' not in arch_gcn else arch_gcn['jk']
         self.arch_gcn = arch_gcn
         self.adj_subgraph = placeholders['adj_subgraph']
-        # adj_subgraph_* are to store row-wise partitioned full graph adj tiles. 
+        # adj_subgraph_* are to store row-wise partitioned full graph adj tiles.
         self.adj_subgraph_0=placeholders['adj_subgraph_0']
         self.adj_subgraph_1=placeholders['adj_subgraph_1']
         self.adj_subgraph_2=placeholders['adj_subgraph_2']
@@ -47,7 +47,7 @@ class GraphSAINT:
         _data = adj_full_norm.data
         _shape = adj_full_norm.shape
         with tf.device('/cpu:0'):
-            self.adj_full_norm = tf.compat.v1.SparseTensorValue(_indices,_data,_shape)
+            self.adj_full_norm = tf.compat.v1.SparseTensor(_indices,_data,_shape)
         self.num_classes = num_classes
         self.sigmoid_loss = (arch_gcn['loss']=='sigmoid')
         _dims,self.order_layer,self.act_layer,self.bias_layer,self.aggr_layer = parse_layer_yml(arch_gcn,features.shape[1])
@@ -62,7 +62,7 @@ class GraphSAINT:
         self.opt_op = None
         self.norm_loss = placeholders['norm_loss']
         self.is_train = placeholders['is_train']
-        
+
         self.build()
 
     def set_dims(self,dims):
@@ -125,8 +125,9 @@ class GraphSAINT:
                                 else tf.nn.softmax_cross_entropy_with_logits
         # weighted loss due to bias in appearance of vertices
         self.loss_terms = f_loss(logits=self.node_preds,labels=self.placeholders['labels'])
-        if len(self.loss_terms.shape) == 1:
-            self.loss_terms = tf.reshape(self.loss_terms,(-1,1))
+        #if len(self.loss_terms.shape) == 1:
+        print("jgw changed loss term if check")
+        self.loss_terms = tf.reshape(self.loss_terms,(-1,1))
         self._weight_loss_batch = tf.nn.embedding_lookup(params=self.norm_loss, ids=self.node_subgraph)
         _loss_terms_weight = tf.linalg.matmul(tf.transpose(a=self.loss_terms),\
                     tf.reshape(self._weight_loss_batch,(-1,1)))
@@ -175,4 +176,3 @@ class GraphSAINT:
                     hidden = self.aggregators[layer]((hidden,adj,self.dims_feat[layer],_adj_partition_list,self.dim0_adj_sub))
                     ret_l.append(hidden)
         return ret_l
-
