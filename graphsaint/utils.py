@@ -57,11 +57,11 @@ def load_data(prefix, normalize=True):
                             for test nodes. The value is the list of IDs of nodes belonging to
                             the train/val/test sets.
     """
-    adj_full = scipy.sparse.load_npz('./{}/adj_full.npz'.format(prefix)).astype(np.bool)
-    adj_train = scipy.sparse.load_npz('./{}/adj_train.npz'.format(prefix)).astype(np.bool)
-    role = json.load(open('./{}/role.json'.format(prefix)))
-    feats = np.load('./{}/feats.npy'.format(prefix))
-    class_map = json.load(open('./{}/class_map.json'.format(prefix)))
+    adj_full = scipy.sparse.load_npz('{}/adj_full.npz'.format(prefix)).astype(np.bool)
+    adj_train = scipy.sparse.load_npz('{}/adj_train.npz'.format(prefix)).astype(np.bool)
+    role = json.load(open('{}/role.json'.format(prefix)))
+    feats = np.load('{}/feats.npy'.format(prefix))
+    class_map = json.load(open('{}/class_map.json'.format(prefix)))
     class_map = {int(k):v for k,v in class_map.items()}
     assert len(class_map) == feats.shape[0]
     # ---- normalize feats ----
@@ -109,7 +109,7 @@ def parse_layer_yml(arch_gcn,dim_input):
 
 def parse_n_prepare(flags):
     with open(flags.train_config) as f_train_config:
-        train_config = yaml.load(f_train_config)
+        train_config = yaml.full_load(f_train_config)
     arch_gcn = {
         'dim': -1,
         'aggr': 'concat',

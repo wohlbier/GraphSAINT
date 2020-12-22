@@ -39,8 +39,8 @@ def evaluate_full_batch(sess,model,minibatch_iter,many_runs_timeline,mode):
     NOTE: HERE GCN RUNS THROUGH THE FULL GRAPH. HOWEVER, WE CALCULATE F1 SCORE
         FOR VALIDATION / TEST NODES ONLY.
     """
-    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
-    run_metadata = tf.RunMetadata()
+    options = tf.compat.v1.RunOptions(trace_level=tf.compat.v1.RunOptions.FULL_TRACE)
+    run_metadata = tf.compat.v1.RunMetadata()
     t1 = time.time()
     num_cls = minibatch_iter.class_arr.shape[-1]
     feed_dict, labels = minibatch_iter.feed_dict(mode)
@@ -60,21 +60,21 @@ def evaluate_full_batch(sess,model,minibatch_iter,many_runs_timeline,mode):
 
 def construct_placeholders(num_classes):
     placeholders = {
-        'labels': tf.placeholder(DTYPE, shape=(None, num_classes), name='labels'),
-        'node_subgraph': tf.placeholder(tf.int32, shape=(None), name='node_subgraph'),
-        'dropout': tf.placeholder(DTYPE, shape=(None), name='dropout'),
-        'adj_subgraph' : tf.sparse_placeholder(DTYPE,name='adj_subgraph',shape=(None,None)),
-        'adj_subgraph_0' : tf.sparse_placeholder(DTYPE,name='adj_subgraph_0'),
-        'adj_subgraph_1' : tf.sparse_placeholder(DTYPE,name='adj_subgraph_1'),
-        'adj_subgraph_2' : tf.sparse_placeholder(DTYPE,name='adj_subgraph_2'),
-        'adj_subgraph_3' : tf.sparse_placeholder(DTYPE,name='adj_subgraph_3'),
-        'adj_subgraph_4' : tf.sparse_placeholder(DTYPE,name='adj_subgraph_4'),
-        'adj_subgraph_5' : tf.sparse_placeholder(DTYPE,name='adj_subgraph_5'),
-        'adj_subgraph_6' : tf.sparse_placeholder(DTYPE,name='adj_subgraph_6'),
-        'adj_subgraph_7' : tf.sparse_placeholder(DTYPE,name='adj_subgraph_7'),
-        'dim0_adj_sub' : tf.placeholder(tf.int64,shape=(None),name='dim0_adj_sub'),
-        'norm_loss': tf.placeholder(DTYPE,shape=(None),name='norm_loss'),
-        'is_train': tf.placeholder(tf.bool, shape=(None), name='is_train')
+        'labels': tf.compat.v1.placeholder(DTYPE, shape=(None, num_classes), name='labels'),
+        'node_subgraph': tf.compat.v1.placeholder(tf.int32, shape=(None), name='node_subgraph'),
+        'dropout': tf.compat.v1.placeholder(DTYPE, shape=(None), name='dropout'),
+        'adj_subgraph' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph',shape=(None,None)),
+        'adj_subgraph_0' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_0'),
+        'adj_subgraph_1' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_1'),
+        'adj_subgraph_2' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_2'),
+        'adj_subgraph_3' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_3'),
+        'adj_subgraph_4' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_4'),
+        'adj_subgraph_5' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_5'),
+        'adj_subgraph_6' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_6'),
+        'adj_subgraph_7' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_7'),
+        'dim0_adj_sub' : tf.compat.v1.placeholder(tf.int64,shape=(None),name='dim0_adj_sub'),
+        'norm_loss': tf.compat.v1.placeholder(DTYPE,shape=(None),name='norm_loss'),
+        'is_train': tf.compat.v1.placeholder(tf.bool, shape=(None), name='is_train')
     }
     return placeholders
 
@@ -98,28 +98,28 @@ def prepare(train_data,train_params,arch_gcn):
                 feats, arch_gcn, train_params, adj_full_norm, logging=True)
 
     # Initialize session
-    sess = tf.Session(config=tf.ConfigProto(device_count={"CPU":40},inter_op_parallelism_threads=44,intra_op_parallelism_threads=44,log_device_placement=args_global.log_device_placement))
-    ph_misc_stat = {'val_f1_micro': tf.placeholder(DTYPE, shape=()),
-                    'val_f1_macro': tf.placeholder(DTYPE, shape=()),
-                    'train_f1_micro': tf.placeholder(DTYPE, shape=()),
-                    'train_f1_macro': tf.placeholder(DTYPE, shape=()),
-                    'time_per_epoch': tf.placeholder(DTYPE, shape=()),
-                    'size_subgraph': tf.placeholder(tf.int32, shape=())}
-    merged = tf.summary.merge_all()
+    sess = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(device_count={"CPU":40},inter_op_parallelism_threads=44,intra_op_parallelism_threads=44,log_device_placement=args_global.log_device_placement))
+    ph_misc_stat = {'val_f1_micro': tf.compat.v1.placeholder(DTYPE, shape=()),
+                    'val_f1_macro': tf.compat.v1.placeholder(DTYPE, shape=()),
+                    'train_f1_micro': tf.compat.v1.placeholder(DTYPE, shape=()),
+                    'train_f1_macro': tf.compat.v1.placeholder(DTYPE, shape=()),
+                    'time_per_epoch': tf.compat.v1.placeholder(DTYPE, shape=()),
+                    'size_subgraph': tf.compat.v1.placeholder(tf.int32, shape=())}
+    merged = tf.compat.v1.summary.merge_all()
 
-    with tf.name_scope('summary'):
-        _misc_val_f1_micro = tf.summary.scalar('val_f1_micro', ph_misc_stat['val_f1_micro'])
-        _misc_val_f1_macro = tf.summary.scalar('val_f1_macro', ph_misc_stat['val_f1_macro'])
-        _misc_train_f1_micro = tf.summary.scalar('train_f1_micro', ph_misc_stat['train_f1_micro'])
-        _misc_train_f1_macro = tf.summary.scalar('train_f1_macro', ph_misc_stat['train_f1_macro'])
-        _misc_time_per_epoch = tf.summary.scalar('time_per_epoch',ph_misc_stat['time_per_epoch'])
-        _misc_size_subgraph = tf.summary.scalar('size_subgraph',ph_misc_stat['size_subgraph'])
+    with tf.compat.v1.name_scope('summary'):
+        _misc_val_f1_micro = tf.compat.v1.summary.scalar('val_f1_micro', ph_misc_stat['val_f1_micro'])
+        _misc_val_f1_macro = tf.compat.v1.summary.scalar('val_f1_macro', ph_misc_stat['val_f1_macro'])
+        _misc_train_f1_micro = tf.compat.v1.summary.scalar('train_f1_micro', ph_misc_stat['train_f1_micro'])
+        _misc_train_f1_macro = tf.compat.v1.summary.scalar('train_f1_macro', ph_misc_stat['train_f1_macro'])
+        _misc_time_per_epoch = tf.compat.v1.summary.scalar('time_per_epoch',ph_misc_stat['time_per_epoch'])
+        _misc_size_subgraph = tf.compat.v1.summary.scalar('size_subgraph',ph_misc_stat['size_subgraph'])
 
-    misc_stats = tf.summary.merge([_misc_val_f1_micro,_misc_val_f1_macro,_misc_train_f1_micro,_misc_train_f1_macro,
+    misc_stats = tf.compat.v1.summary.merge([_misc_val_f1_micro,_misc_val_f1_macro,_misc_train_f1_micro,_misc_train_f1_macro,
                     _misc_time_per_epoch,_misc_size_subgraph])
-    summary_writer = tf.summary.FileWriter(log_dir(args_global.train_config,args_global.data_prefix,git_branch,git_rev,timestamp), sess.graph)
+    summary_writer = tf.compat.v1.summary.FileWriter(log_dir(args_global.train_config,args_global.data_prefix,git_branch,git_rev,timestamp), sess.graph)
     # Init variables
-    sess.run(tf.global_variables_initializer())
+    sess.run(tf.compat.v1.global_variables_initializer())
     return model,minibatch, sess, [merged,misc_stats],ph_misc_stat, summary_writer
 
 
@@ -129,13 +129,13 @@ def train(train_phases,model,minibatch,\
     import time
 
     # saver = tf.train.Saver(var_list=tf.trainable_variables())
-    saver=tf.train.Saver()
+    saver=tf.compat.v1.train.Saver()
 
     epoch_ph_start = 0
     f1mic_best, e_best = 0, 0
     time_calc_f1, time_train, time_prepare = 0, 0, 0
-    options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE,report_tensor_allocations_upon_oom=True)
-    run_metadata = tf.RunMetadata()
+    options = tf.compat.v1.RunOptions(trace_level=tf.compat.v1.RunOptions.FULL_TRACE,report_tensor_allocations_upon_oom=True)
+    run_metadata = tf.compat.v1.RunMetadata()
     many_runs_timeline=[]       # only used when TF timeline is enabled
     for ip,phase in enumerate(train_phases):
         # We normally only have a single phase of training (see README for defn of 'phase').
@@ -164,7 +164,7 @@ def train(train_phases,model,minibatch,\
                 else:
                     _,__,loss_train,pred_train = sess.run([train_stat[0], \
                             model.opt_op, model.loss, model.preds], feed_dict=feed_dict, \
-                            options=tf.RunOptions(report_tensor_allocations_upon_oom=True))
+                            options=tf.compat.v1.RunOptions(report_tensor_allocations_upon_oom=True))
                 t2 = time.time()
                 time_train_ep += t2-t1
                 time_prepare_ep += t1-t0
@@ -181,9 +181,9 @@ def train(train_phases,model,minibatch,\
                 # current model params are communicated to the new session via tmp.chkpt
                 saver.save(sess,'./tmp.chkpt')
                 with tf.device('/cpu:0'):
-                    sess_cpu = tf.Session(config=tf.ConfigProto(device_count={'GPU': 0}))
-                    sess_cpu.run(tf.global_variables_initializer())
-                    saver = tf.train.Saver()
+                    sess_cpu = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(device_count={'GPU': 0}))
+                    sess_cpu.run(tf.compat.v1.global_variables_initializer())
+                    saver = tf.compat.v1.train.Saver()
                     saver.restore(sess_cpu, './tmp.chkpt')
                     sess_eval=sess_cpu
             else:
@@ -240,4 +240,4 @@ def train_main(argv=None):
     return ret
 
 if __name__ == '__main__':
-    tf.app.run(main=train_main)
+    tf.compat.v1.app.run(main=train_main)

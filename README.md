@@ -3,11 +3,15 @@
 conda create -n graphsaint_env
 conda activate graphsaint_env
 conda install \
-      cython \
-      pyyaml \
-      scikit-learn \
-      tensorflow==1.15
+      cython==0.29.21 \
+      pyyaml==5.3.1 \
+      scikit-learn==0.23.2 \
+      tensorflow==2.3.0
 python graphsaint/setup.py build_ext --inplace
+```
+Upgraded tf version
+```
+tf_upgrade_v2 --intree tensorflow_version/ --outtree tensorflow_version_2 --reportfile report.txt
 ```
 
 If you have ogb data you need to be in the right form.
@@ -19,7 +23,7 @@ cd /srv/scratch/jgwohlbier/GraphSAINT/data/open_graph_benchmark
 python ogbn_converter.py
 ```
 
-`python -m graphsaint.tensorflow_version.train --data_prefix /srv/scratch/ogb/datasets/nodeproppred/ogbn_products/GraphSAINT --train_config ./train_config/open_graph_benchmark/ogbn-products_3_e_gat.yml --gpu -1`
+`python -m graphsaint.tensorflow_version_2.train --data_prefix /srv/scratch/ogb/datasets/nodeproppred/ogbn_products/GraphSAINT --train_config ./train_config/open_graph_benchmark/ogbn-products_3_e_gat.yml --gpu -1`
 
 
 
