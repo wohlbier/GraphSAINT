@@ -1,3 +1,27 @@
+# jgw
+```
+conda create -n graphsaint_env
+conda activate graphsaint_env
+conda install \
+      cython \
+      pyyaml \
+      scikit-learn \
+      tensorflow==1.15
+python graphsaint/setup.py build_ext --inplace
+```
+
+If you have ogb data you need to be in the right form.
+```
+conda deactivate
+conda activate ogb_env
+cd /srv/scratch/jgwohlbier/GraphSAINT/data/open_graph_benchmark
+# set up paths in the script ogbn_converter.py
+python ogbn_converter.py
+```
+
+`python -m graphsaint.tensorflow_version.train --data_prefix /srv/scratch/ogb/datasets/nodeproppred/ogbn_products/GraphSAINT --train_config ./train_config/open_graph_benchmark/ogbn-products_3_e_gat.yml --gpu -1`
+
+
 
 # GraphSAINT: Graph <u>Sa</u>mpling Based <u>In</u>ductive Learning Me<u>t</u>hod
 
@@ -33,7 +57,7 @@ GraphSAINT performs "*graph sampling*" based training, whereas others perform "*
 
 This repo contains source code of our two papers (ICLR '20 and IEEE/IPDPS '19, see the [Citation](#Citation-&-Acknowledgement) Section).
 
-The `./graphsaint` directory contains the Python implementation of the minibatch training algorithm in ICLR '20. We provide two implementations, one in Tensorflow and the other in PyTorch. The two versions follow the same algorithm. Note that all experiments in our paper are based on the Tensorflow implementation. New experiments on open graph benchmark are based on the PyTorch version. 
+The `./graphsaint` directory contains the Python implementation of the minibatch training algorithm in ICLR '20. We provide two implementations, one in Tensorflow and the other in PyTorch. The two versions follow the same algorithm. Note that all experiments in our paper are based on the Tensorflow implementation. New experiments on open graph benchmark are based on the PyTorch version.
 
 
 The `./ipdps19_cpp` directory contains the C++ implementation of the parallel training techniques described in IEEE/IPDPS '19 (see `./ipdps19_cpp/README.md`). All the rest of this repository are for GraphSAINT in ICLR '20.
