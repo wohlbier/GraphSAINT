@@ -13,7 +13,7 @@ to the GraphSAINT format.
 Right now, ogbn-products and ogbn-arxiv can be converted by this script.
 """
 
-datapath='/srv/scratch/ogb/datasets/nodeproppred/'
+datapath='/srv/scratch/ogb/datasets/cb/nodeproppred/'
 
 #dataset = PygNodePropPredDataset(name=sys.argv[1])
 dataset = PygNodePropPredDataset(name='ogbn-products',
