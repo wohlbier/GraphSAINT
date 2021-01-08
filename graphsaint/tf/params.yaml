@@ -83,25 +83,36 @@ cs_ip:
 mode: 'train'
 
 
-# from OG GraphSAINT
+# from OG GraphSAINT. arch_gcn was internal dict.
+arch_gcn:
+  dim: -1
+  aggr: 'concat'
+  loss: 'softmax'
+  arch: '1-1-1'
+  act: 'I'
+  bias: 'norm'
 network:
-  - dim: 256
-    aggr: 'mean'
-    loss: 'softmax'
-    arch: '1-1-1'
-    attention: 4
-    act: 'relu'
-    bias: 'norm'
+  dim: 256
+  aggr: 'mean'
+  loss: 'softmax'
+  arch: '1-1-1'
+  attention: 4
+  act: 'relu'
+  bias: 'norm'
 train_params:
-  - lr: 0.01
-    dropout: 0.3
-    weight_decay: 0.0
-    sample_coverage: 1000
-    eval_val_every: 10      # [optional] how often do you run on validation set
+  lr: 0.01
+  dropout: 0.3
+  weight_decay: 0.0
+  norm_loss: True,
+  norm_aggr: True,
+  q_threshold: 50,
+  q_offset: 0
+  sample_coverage: 1000
+  eval_val_every: 10      # [optional] how often do you run on validation set
 phase:
-  - end: 200
-    sampler: 'edge'
-    size_subg_edge: 20000
+  end: 200
+  sampler: 'edge'
+  size_subg_edge: 20000
 
 
 # Results over 10 runs:

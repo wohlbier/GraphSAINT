@@ -2,6 +2,7 @@
 #from graphsaint.tf.inits import *
 from graphsaint.tf.input import *
 #from graphsaint.tf.model import GraphSAINT
+from graphsaint.tf.model import model_fn
 #from graphsaint.tf.minibatch import Minibatch
 #from graphsaint.utils import *
 #from graphsaint.metric import *
@@ -34,7 +35,7 @@ import json
 #    def save(self, f_name):
 #        with open(f_name, 'w') as f:
 #            json.dump(self._timeline_dict, f)
-#
+
 #def evaluate_full_batch(sess,model,minibatch_iter,many_runs_timeline,mode):
 #    """
 #    Full batch evaluation
@@ -57,77 +58,11 @@ import json
 #    t2 = time.time()
 #    f1_scores = calc_f1(labels[node_val_test],preds[node_val_test],model.sigmoid_loss)
 #    return loss, f1_scores[0], f1_scores[1], (t2-t1)
-#
-#
-#
-#def construct_placeholders(num_classes):
-#    placeholders = {
-#        'labels': tf.compat.v1.placeholder(DTYPE, shape=(None, num_classes), name='labels'),
-#        'node_subgraph': tf.compat.v1.placeholder(tf.int32, shape=(None), name='node_subgraph'),
-#        'dropout': tf.compat.v1.placeholder(DTYPE, shape=(None), name='dropout'),
-#        'adj_subgraph' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph',shape=(None,None)),
-#        'adj_subgraph_0' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_0'),
-#        'adj_subgraph_1' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_1'),
-#        'adj_subgraph_2' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_2'),
-#        'adj_subgraph_3' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_3'),
-#        'adj_subgraph_4' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_4'),
-#        'adj_subgraph_5' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_5'),
-#        'adj_subgraph_6' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_6'),
-#        'adj_subgraph_7' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph_7'),
-#        'dim0_adj_sub' : tf.compat.v1.placeholder(tf.int64,shape=(None),name='dim0_adj_sub'),
-#        'norm_loss': tf.compat.v1.placeholder(DTYPE,shape=(None),name='norm_loss'),
-#        'is_train': tf.compat.v1.placeholder(tf.bool, shape=(None), name='is_train')
-#    }
-#    return placeholders
-#
-#
-#
-#
-#
-##########
-## TRAIN #
-##########
-#def prepare(train_data,train_params,arch_gcn):
-#    adj_full,adj_train,feats,class_arr,role = train_data
-#    adj_full = adj_full.astype(np.int32)
-#    adj_train = adj_train.astype(np.int32)
-#    adj_full_norm = adj_norm(adj_full)
-#    num_classes = class_arr.shape[1]
-#
-#    print("num_classes: " + str(num_classes))
-#    placeholders = construct_placeholders(num_classes)
-#    minibatch = Minibatch(adj_full_norm, adj_train, role, class_arr, placeholders, train_params)
-#    model = GraphSAINT(num_classes, placeholders,
-#                feats, arch_gcn, train_params, adj_full_norm, logging=True)
-#
-#    # Initialize session
-#    sess = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(device_count={"CPU":40},inter_op_parallelism_threads=44,intra_op_parallelism_threads=44,log_device_placement=args_global.log_device_placement))
-#    ph_misc_stat = {'val_f1_micro': tf.compat.v1.placeholder(DTYPE, shape=()),
-#                    'val_f1_macro': tf.compat.v1.placeholder(DTYPE, shape=()),
-#                    'train_f1_micro': tf.compat.v1.placeholder(DTYPE, shape=()),
-#                    'train_f1_macro': tf.compat.v1.placeholder(DTYPE, shape=()),
-#                    'time_per_epoch': tf.compat.v1.placeholder(DTYPE, shape=()),
-#                    'size_subgraph': tf.compat.v1.placeholder(tf.int32, shape=())}
-#    merged = tf.compat.v1.summary.merge_all()
-#
-#    with tf.compat.v1.name_scope('summary'):
-#        _misc_val_f1_micro = tf.compat.v1.summary.scalar('val_f1_micro', ph_misc_stat['val_f1_micro'])
-#        _misc_val_f1_macro = tf.compat.v1.summary.scalar('val_f1_macro', ph_misc_stat['val_f1_macro'])
-#        _misc_train_f1_micro = tf.compat.v1.summary.scalar('train_f1_micro', ph_misc_stat['train_f1_micro'])
-#        _misc_train_f1_macro = tf.compat.v1.summary.scalar('train_f1_macro', ph_misc_stat['train_f1_macro'])
-#        _misc_time_per_epoch = tf.compat.v1.summary.scalar('time_per_epoch',ph_misc_stat['time_per_epoch'])
-#        _misc_size_subgraph = tf.compat.v1.summary.scalar('size_subgraph',ph_misc_stat['size_subgraph'])
-#
-#    misc_stats = tf.compat.v1.summary.merge([_misc_val_f1_micro,_misc_val_f1_macro,_misc_train_f1_micro,_misc_train_f1_macro,
-#                    _misc_time_per_epoch,_misc_size_subgraph])
-#    #summary_writer = tf.compat.v1.summary.FileWriter(log_dir(args_global.train_config,args_global.data_prefix,git_branch,git_rev,timestamp), sess.graph)
-#    summary_writer = tf.summary.create_file_writer(log_dir(args_global.train_config,args_global.data_prefix,git_branch,git_rev,timestamp))
-#    # Init variables
-#    sess.run(tf.compat.v1.global_variables_initializer())
-#    return model,minibatch, sess, [merged,misc_stats],ph_misc_stat, summary_writer
-#
-#
-#
+
+
+#########
+# TRAIN #
+#########
 #def train(train_phases,model,minibatch,\
 #            sess,train_stat,ph_misc_stat,summary_writer):
 #    import time
@@ -232,7 +167,6 @@ import json
 #    #        'time_train': time_train}
 #    return      # everything is logged by TF. no need to return anything
 
-
 ########
 # MAIN #
 ########
@@ -242,36 +176,6 @@ def train_main(argv=None):
     model,minibatch,sess,train_stat,ph_misc_stat,summary_writer = prepare(train_data,train_params,arch_gcn)
     ret = train(train_phases,model,minibatch,sess,train_stat,ph_misc_stat,summary_writer)
     return ret
-
-
-# jgw
-def model_fn(features, labels, mode, params):
-    """
-    The model function to be used with TF estimator API
-    """
-    print('features')
-    print(features)
-    print('labels')
-    print(labels)
-    print('mode: ' + mode)
-    print(params)
-    #gnn = getattr(sys.modules[__name__], params["model"]["model"])(params)
-    #outputs = gnn(features, labels, mode)
-    #loss = gnn.build_total_loss(outputs, features, labels, mode)
-
-    #if mode == tf.estimator.ModeKeys.TRAIN:
-    #    train_op = gnn.build_train_ops(loss)
-    #    eval_metric_ops = None
-    #elif mode == tf.estimator.ModeKeys.EVAL:
-    #    train_op = None
-    #    eval_metric_ops = gnn.build_eval_metric_ops(outputs, features, labels)
-    #else:
-    #    raise ValueError(f"Mode {mode} not supported.")
-
-    #return tf.estimator.EstimatorSpec(
-    #    mode=mode, loss=loss, train_op=train_op, eval_metric_ops=eval_metric_ops
-    #)
-    return tf.estimator.EstimatorSpec(mode=mode)
 
 def train_main_2(argv=None):
     print("train_main_2")
