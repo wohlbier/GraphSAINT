@@ -1,7 +1,7 @@
 import tensorflow as tf
-from graphsaint.globals import *
-from graphsaint.tensorflow_version.inits import *
-import graphsaint.tensorflow_version.layers as layers
+#from graphsaint.globals import *
+from graphsaint.tf.inits import *
+import graphsaint.tf.layers as layers
 from graphsaint.utils import *
 import pdb
 
@@ -47,7 +47,7 @@ class GraphSAINT:
         _data = adj_full_norm.data
         _shape = adj_full_norm.shape
         with tf.device('/cpu:0'):
-            self.adj_full_norm = tf.SparseTensorValue(_indices,_data,_shape)
+            self.adj_full_norm = tf.compat.v1.SparseTensor(_indices,_data,_shape)
         self.num_classes = num_classes
         self.sigmoid_loss = (arch_gcn['loss']=='sigmoid')
         _dims,self.order_layer,self.act_layer,self.bias_layer,self.aggr_layer = parse_layer_yml(arch_gcn,features.shape[1])
@@ -56,7 +56,7 @@ class GraphSAINT:
         self.set_dims(_dims)
         self.placeholders = placeholders
 
-        self.optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
+        self.optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=self.lr)
 
         self.loss = 0
         self.opt_op = None
@@ -102,7 +102,7 @@ class GraphSAINT:
 
         # BACK PROP
         self._loss()
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
             grads_and_vars = self.optimizer.compute_gradients(self.loss)
             clipped_grads_and_vars = [(tf.clip_by_value(grad, -5.0, 5.0) if grad is not None else None, var)
@@ -128,11 +128,11 @@ class GraphSAINT:
         loss_terms_ndims = self.loss_terms.shape.ndims if self.loss_terms.shape is not None else None
         if loss_terms_ndims == 1:
             self.loss_terms = tf.reshape(self.loss_terms,(-1,1))
-        self._weight_loss_batch = tf.nn.embedding_lookup(self.norm_loss, self.node_subgraph)
-        _loss_terms_weight = tf.linalg.matmul(tf.transpose(self.loss_terms),\
+        self._weight_loss_batch = tf.nn.embedding_lookup(params=self.norm_loss, ids=self.node_subgraph)
+        _loss_terms_weight = tf.linalg.matmul(tf.transpose(a=self.loss_terms),\
                     tf.reshape(self._weight_loss_batch,(-1,1)))
-        self.loss += tf.reduce_sum(_loss_terms_weight)
-        tf.summary.scalar('loss', self.loss)
+        self.loss += tf.reduce_sum(input_tensor=_loss_terms_weight)
+        tf.compat.v1.summary.scalar('loss', self.loss)
 
     def predict(self):
         return tf.nn.sigmoid(self.node_preds) if self.sigmoid_loss \
@@ -153,7 +153,7 @@ class GraphSAINT:
 
     def aggregate_subgraph(self, batch_size=None, name=None, mode='train'):
         if mode == 'train':
-            hidden = tf.nn.embedding_lookup(self.features, self.node_subgraph)
+            hidden = tf.nn.embedding_lookup(params=self.features, ids=self.node_subgraph)
             adj = self.adj_subgraph
         else:
             hidden = self.features

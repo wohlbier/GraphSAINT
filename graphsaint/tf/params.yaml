@@ -1,0 +1,122 @@
+# Copyright 2020 Cerebras Systems.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Params for GraphSAINT on OGBN-PRODUCTS
+
+train_input:
+  data_processor: OGBNGraphSAINTDataProcessor
+  dataset_dir: '/data'
+  num_targets: 47
+  max_num_nodes: 2449029
+  ## 9 atom features
+  ## element, chirality, degree, formal charge, number of hydrogens,
+  ## number of radicals, orbit hybridization, aromaticity, member of ring
+  #atom_feats: [119, 4, 12, 12, 10, 6, 6, 2, 2]
+  ## 3 bond features (not used currently)
+  ## bond type, bond stereo, whether conjugated
+  #bond_feats: [5, 6, 2]
+  batch_size: 32
+  eval_batch_size: 32
+  #shuffle_buffer: 3000
+
+model:
+  model: GraphSAINTClassifier
+  hidden_dim: 256
+  gnn_depth: 3
+  #fc_depth: 2
+  # activation parameters
+  activation: relu
+  pre_activation: False
+  # dropout parameters
+  dropout_rate: 0.3
+  # normalization parameters
+  use_norm: True
+  layer_norm_epsilon: 1.0e-5
+  # vars from OG GraphSAINT
+  aggr: mean
+  loss: softmax
+  arch: 1-1-1
+  bias: norm
+  attention: 4
+
+optimizer:
+  optimizer_type: adam
+  learning_rate: 1.0e-2
+  epsilon: 1.0e-6
+  loss_scaling_factor: 'dynamic'
+
+runconfig:
+  save_summary_steps: 1
+  save_checkpoints_steps: 2
+  keep_checkpoint_max: 0  # keeps all checkpoints
+
+training:
+  steps: 1
+  mixed_precision: True
+  boundary_casting: False
+  tf_summary: False
+  enable_distributed: False
+  # vars from OG GraphSAINT
+  weight_decay: 0.0
+  norm_loss: True
+  norm_aggr: True
+  q_threshold: 50
+  q_offset: 0
+  sample_coverage: 1000
+  eval_val_every: 10
+
+
+
+model_dir: 'model_dir'
+cs_ip:
+mode: 'train'
+
+
+# from OG GraphSAINT
+network:
+  - dim: 256
+    aggr: 'mean'
+    loss: 'softmax'
+    arch: '1-1-1'
+    attention: 4
+    act: 'relu'
+    bias: 'norm'
+train_params:
+  - lr: 0.01
+    dropout: 0.3
+    weight_decay: 0.0
+    sample_coverage: 1000
+    eval_val_every: 10      # [optional] how often do you run on validation set
+phase:
+  - end: 200
+    sampler: 'edge'
+    size_subg_edge: 20000
+
+
+# Results over 10 runs:
+#
+# Runs  F1-mic    F1-mac    Best-Epoch
+# ------------------------------------
+#    1  0.8051    0.3703    150
+#    2  0.7995    0.3696    200
+#    3  0.8038    0.3721    180
+#    4  0.8061    0.3752    150
+#    5  0.8011    0.3651    200
+#    6  0.8023    0.3636    180
+#    7  0.8017    0.3692    200
+#    8  0.8026    0.3647    170
+#    9  0.7987    0.3655    150
+#   10  0.8065    0.3769    200
+# ------------------------------------
+#  AVG  0.8027    0.3692    ---

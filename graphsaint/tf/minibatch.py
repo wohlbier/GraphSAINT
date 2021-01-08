@@ -1,6 +1,6 @@
-from graphsaint.globals import *
+#from graphsaint.globals import *
 import math
-from graphsaint.tensorflow_version_2.inits import *
+from graphsaint.tf.inits import *
 from graphsaint.utils import *
 from graphsaint.graph_samplers import *
 from graphsaint.norm_aggr import *

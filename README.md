@@ -25,7 +25,9 @@ python ogbn_converter.py
 
 `python -m graphsaint.tensorflow_version_2.train --data_prefix /srv/scratch/ogb/datasets/cb/nodeproppred/ogbn_products/GraphSAINT --train_config ./train_config/open_graph_benchmark/ogbn-products_3_e_gat.yml --gpu -1`
 
-
+`
+python -m graphsaint.tf.train --data-prefix /srv/scratch/ogb/datasets/cb/nodeproppred/ogbn_products/GraphSAINT
+`
 
 # GraphSAINT: Graph <u>Sa</u>mpling Based <u>In</u>ductive Learning Me<u>t</u>hod
 
