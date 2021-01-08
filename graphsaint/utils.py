@@ -142,10 +142,6 @@ def parse_n_prepare(flags):
     print("Done loading training data..")
     return train_params,train_phases,train_data,arch_gcn
 
-
-
-
-
 def log_dir(f_train_config,prefix,git_branch,git_rev,timestamp):
     import getpass
     log_dir = args_global.dir_log+"/log_train/" + prefix.split("/")[-1]

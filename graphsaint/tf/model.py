@@ -113,43 +113,51 @@ class GraphSAINT:
                                        bias="bias")
         self.node_preds = self.layer_pred((self.outputs,None,None,None,None))
 
-#        # BACK PROP
-#        self._loss()
-#        update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
-#        with tf.control_dependencies(update_ops):
-#            grads_and_vars = self.optimizer.compute_gradients(self.loss)
-#            clipped_grads_and_vars = [(tf.clip_by_value(grad, -5.0, 5.0) if grad is not None else None, var)
-#                    for grad, var in grads_and_vars]
-#            self.grad, _ = clipped_grads_and_vars[0]
-#            self.opt_op = self.optimizer.apply_gradients(clipped_grads_and_vars)
-#        self.preds = self.predict()
-#
-#
-#    def _loss(self):
-#        # these are all the trainable var
-#        for aggregator in self.aggregators:
-#            for var in aggregator.vars.values():
-#                self.loss += self.weight_decay * tf.nn.l2_loss(var)
-#        for var in self.layer_pred.vars.values():
-#            self.loss += self.weight_decay * tf.nn.l2_loss(var)
-#
-#        # classification loss
-#        f_loss = tf.nn.sigmoid_cross_entropy_with_logits if self.sigmoid_loss\
-#                                else tf.nn.softmax_cross_entropy_with_logits
-#        # weighted loss due to bias in appearance of vertices
-#        self.loss_terms = f_loss(logits=self.node_preds,labels=self.placeholders['labels'])
-#        loss_terms_ndims = self.loss_terms.shape.ndims if self.loss_terms.shape is not None else None
-#        if loss_terms_ndims == 1:
-#            self.loss_terms = tf.reshape(self.loss_terms,(-1,1))
-#        self._weight_loss_batch = tf.nn.embedding_lookup(params=self.norm_loss, ids=self.node_subgraph)
-#        _loss_terms_weight = tf.linalg.matmul(tf.transpose(a=self.loss_terms),\
-#                    tf.reshape(self._weight_loss_batch,(-1,1)))
-#        self.loss += tf.reduce_sum(input_tensor=_loss_terms_weight)
-#        tf.compat.v1.summary.scalar('loss', self.loss)
-#
-#    def predict(self):
-#        return tf.nn.sigmoid(self.node_preds) if self.sigmoid_loss \
-#                else tf.nn.softmax(self.node_preds)
+        # BACK PROP
+        self._loss()
+        update_ops = \
+            tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+            grads_and_vars = self.optimizer.compute_gradients(self.loss)
+            clipped_grads_and_vars = \
+                [(tf.clip_by_value(grad, -5.0, 5.0) \
+                  if grad is not None else None, var)
+                 for grad, var in grads_and_vars]
+            self.grad, _ = clipped_grads_and_vars[0]
+            self.opt_op = \
+                self.optimizer.apply_gradients(clipped_grads_and_vars)
+        self.preds = self.predict()
+
+    def _loss(self):
+        # these are all the trainable var
+        for aggregator in self.aggregators:
+            for var in aggregator.vars.values():
+                self.loss += self.weight_decay * tf.nn.l2_loss(var)
+        for var in self.layer_pred.vars.values():
+            self.loss += self.weight_decay * tf.nn.l2_loss(var)
+
+        # classification loss
+        f_loss = tf.nn.sigmoid_cross_entropy_with_logits if self.sigmoid_loss\
+            else tf.nn.softmax_cross_entropy_with_logits
+        # weighted loss due to bias in appearance of vertices
+        self.loss_terms = f_loss(logits=self.node_preds,
+                                 labels=self.placeholders['labels'])
+        loss_terms_ndims = self.loss_terms.shape.ndims \
+            if self.loss_terms.shape is not None else None
+        if loss_terms_ndims == 1:
+            self.loss_terms = tf.reshape(self.loss_terms,(-1,1))
+        self._weight_loss_batch = \
+            tf.nn.embedding_lookup(params=self.norm_loss,
+                                   ids=self.node_subgraph)
+        _loss_terms_weight = \
+            tf.linalg.matmul(tf.transpose(a=self.loss_terms),
+                             tf.reshape(self._weight_loss_batch,(-1,1)))
+        self.loss += tf.reduce_sum(input_tensor=_loss_terms_weight)
+        tf.compat.v1.summary.scalar('loss', self.loss)
+
+    def predict(self):
+        return tf.nn.sigmoid(self.node_preds) if self.sigmoid_loss \
+            else tf.nn.softmax(self.node_preds)
 
     def get_aggregators(self,name=None):
         aggregators = []
@@ -274,7 +282,10 @@ def parse_layer_yml(arch_gcn,dim_input):
     order_layer = [int(o) for o in arch_gcn['arch'].split('-')]
     return [dim_input]+dims_layer,order_layer,act_layer,bias_layer,aggr_layer
 
-def prepare(features,labels,train_params,arch_gcn):
+def prepare(features, labels, params):
+    train_params = params["train_params"]
+    arch_gcn = params["arch_gcn"]
+
     #adj_full,adj_train,feats,class_arr,role = train_data
     adj_full = features["adj_full"]
     adj_train = features["adj_train"]
@@ -294,31 +305,53 @@ def prepare(features,labels,train_params,arch_gcn):
     model = GraphSAINT(num_classes, placeholders, feats, arch_gcn,
                        train_params, adj_full_norm, logging=True)
 
-#    # Initialize session
-#    sess = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(device_count={"CPU":40},inter_op_parallelism_threads=44,intra_op_parallelism_threads=44,log_device_placement=args_global.log_device_placement))
-#    ph_misc_stat = {'val_f1_micro': tf.compat.v1.placeholder(DTYPE, shape=()),
-#                    'val_f1_macro': tf.compat.v1.placeholder(DTYPE, shape=()),
-#                    'train_f1_micro': tf.compat.v1.placeholder(DTYPE, shape=()),
-#                    'train_f1_macro': tf.compat.v1.placeholder(DTYPE, shape=()),
-#                    'time_per_epoch': tf.compat.v1.placeholder(DTYPE, shape=()),
-#                    'size_subgraph': tf.compat.v1.placeholder(tf.int32, shape=())}
-#    merged = tf.compat.v1.summary.merge_all()
-#
-#    with tf.compat.v1.name_scope('summary'):
-#        _misc_val_f1_micro = tf.compat.v1.summary.scalar('val_f1_micro', ph_misc_stat['val_f1_micro'])
-#        _misc_val_f1_macro = tf.compat.v1.summary.scalar('val_f1_macro', ph_misc_stat['val_f1_macro'])
-#        _misc_train_f1_micro = tf.compat.v1.summary.scalar('train_f1_micro', ph_misc_stat['train_f1_micro'])
-#        _misc_train_f1_macro = tf.compat.v1.summary.scalar('train_f1_macro', ph_misc_stat['train_f1_macro'])
-#        _misc_time_per_epoch = tf.compat.v1.summary.scalar('time_per_epoch',ph_misc_stat['time_per_epoch'])
-#        _misc_size_subgraph = tf.compat.v1.summary.scalar('size_subgraph',ph_misc_stat['size_subgraph'])
-#
-#    misc_stats = tf.compat.v1.summary.merge([_misc_val_f1_micro,_misc_val_f1_macro,_misc_train_f1_micro,_misc_train_f1_macro,
-#                    _misc_time_per_epoch,_misc_size_subgraph])
-#    #summary_writer = tf.compat.v1.summary.FileWriter(log_dir(args_global.train_config,args_global.data_prefix,git_branch,git_rev,timestamp), sess.graph)
-#    summary_writer = tf.summary.create_file_writer(log_dir(args_global.train_config,args_global.data_prefix,git_branch,git_rev,timestamp))
-#    # Init variables
-#    sess.run(tf.compat.v1.global_variables_initializer())
-#    return model,minibatch, sess, [merged,misc_stats],ph_misc_stat, summary_writer
+    # Initialize session
+    sess = \
+        tf.compat.v1.Session(config=\
+                             tf.compat.v1.ConfigProto(device_count={"CPU":40},
+                                                      inter_op_parallelism_threads=44,
+                                                      intra_op_parallelism_threads=44,
+                                                      log_device_placement=False))
+    ph_misc_stat = {'val_f1_micro': tf.compat.v1.placeholder(DTYPE, shape=()),
+                    'val_f1_macro': tf.compat.v1.placeholder(DTYPE, shape=()),
+                    'train_f1_micro': tf.compat.v1.placeholder(DTYPE,
+                                                               shape=()),
+                    'train_f1_macro': tf.compat.v1.placeholder(DTYPE,
+                                                               shape=()),
+                    'time_per_epoch': tf.compat.v1.placeholder(DTYPE,
+                                                               shape=()),
+                    'size_subgraph': tf.compat.v1.placeholder(tf.int32,
+                                                              shape=())}
+    merged = tf.compat.v1.summary.merge_all()
+
+    with tf.compat.v1.name_scope('summary'):
+        _misc_val_f1_micro = tf.compat.v1.summary.scalar('val_f1_micro',
+                                                         ph_misc_stat['val_f1_micro'])
+        _misc_val_f1_macro = tf.compat.v1.summary.scalar('val_f1_macro',
+                                                         ph_misc_stat['val_f1_macro'])
+        _misc_train_f1_micro = tf.compat.v1.summary.scalar('train_f1_micro',
+                                                           ph_misc_stat['train_f1_micro'])
+        _misc_train_f1_macro = tf.compat.v1.summary.scalar('train_f1_macro',
+                                                           ph_misc_stat['train_f1_macro'])
+        _misc_time_per_epoch = tf.compat.v1.summary.scalar('time_per_epoch',
+                                                           ph_misc_stat['time_per_epoch'])
+        _misc_size_subgraph = tf.compat.v1.summary.scalar('size_subgraph',
+                                                          ph_misc_stat['size_subgraph'])
+
+    misc_stats = tf.compat.v1.summary.merge([_misc_val_f1_micro,
+                                             _misc_val_f1_macro,
+                                             _misc_train_f1_micro,
+                                             _misc_train_f1_macro,
+                                             _misc_time_per_epoch,
+                                             _misc_size_subgraph])
+    #summary_writer = tf.compat.v1.summary.FileWriter(log_dir(args_global.train_config,args_global.data_prefix,git_branch,git_rev,timestamp), sess.graph)
+    print(train_params)
+    summary_writer = \
+        tf.summary.create_file_writer('./graphsaint/tf/log')
+    # Init variables
+    sess.run(tf.compat.v1.global_variables_initializer())
+    return model, minibatch, sess, [merged,misc_stats], \
+        ph_misc_stat, summary_writer
 
 def model_fn(features, labels, mode, params):
     """
@@ -326,14 +359,8 @@ def model_fn(features, labels, mode, params):
     """
     #gnn = getattr(sys.modules[__name__], params["model"]["model"])(params)
 
-    prepare(features, labels, params["train_params"], params["arch_gcn"])
+    prepare(features, labels, params)
 
-    #num_classes = labels["class_arr"].shape[1]
-    #placeholders = construct_placeholders(num_classes)
-    #
-    #gs = GraphSAINT(num_classes, placeholders, features["feats"],
-    #                params["arch_gcn"], params["train_params"],
-    #                features["adj_full_norm"])
     #outputs = gnn(features, labels, mode)
     #loss = gnn.build_total_loss(outputs, features, labels, mode)
 
