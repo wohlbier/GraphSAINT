@@ -60,6 +60,9 @@ def get_params(params_file, args):
         params = yaml.safe_load(stream)
     set_defaults(params)
     set_cmdline_args(params, args)
+    # store params_file
+    params["params_file"] = params_file
+
     return params
 
 def set_defaults(params):

@@ -209,6 +209,15 @@ class GraphSAINT:
 #                    ret_l.append(hidden)
         return ret_l
 
+    def build_train_ops(self):
+        self.loss_op = tf.compat.v1.reduce_mean(self.loss_terms)
+        return \
+            self.optimizer.minimize(self.loss_op,
+                                    global_step=tf.compat.v1.train.get_global_step())
+
+    def build_eval_metric_ops(self):
+        return 0
+
 def construct_placeholders(num_classes):
     placeholders = {
         'labels': tf.compat.v1.placeholder(DTYPE, shape=(None, num_classes),
@@ -282,6 +291,21 @@ def parse_layer_yml(arch_gcn,dim_input):
     order_layer = [int(o) for o in arch_gcn['arch'].split('-')]
     return [dim_input]+dims_layer,order_layer,act_layer,bias_layer,aggr_layer
 
+def log_dir(f_train_config, prefix, git_branch, git_rev, timestamp):
+    #import getpass
+    #log_dir = args_global.dir_log+"/log_train/" + prefix.split("/")[-1]
+    #log_dir += "/{ts}-{model}-{gitrev:s}/".format(
+    #        model='graphsaint',
+    #        gitrev=git_rev.strip(),
+    #        ts=timestamp)
+    log_dir = "./graphsaint/tf/log_train"
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    if f_train_config != '':
+        from shutil import copyfile
+        copyfile(f_train_config,'{}/{}'.format(log_dir,f_train_config.split('/')[-1]))
+    return log_dir
+
 def prepare(features, labels, params):
     train_params = params["train_params"]
     arch_gcn = params["arch_gcn"]
@@ -298,7 +322,6 @@ def prepare(features, labels, params):
     adj_full_norm = adj_norm(adj_full)
     num_classes = class_arr.shape[1]
 
-    print("num_classes: " + str(num_classes))
     placeholders = construct_placeholders(num_classes)
     minibatch = Minibatch(adj_full_norm, adj_train, role, class_arr,
                           placeholders, train_params)
@@ -344,10 +367,18 @@ def prepare(features, labels, params):
                                              _misc_train_f1_macro,
                                              _misc_time_per_epoch,
                                              _misc_size_subgraph])
-    #summary_writer = tf.compat.v1.summary.FileWriter(log_dir(args_global.train_config,args_global.data_prefix,git_branch,git_rev,timestamp), sess.graph)
-    print(train_params)
+    #op = sess.graph.get_operations()
+    #[m.values() for m in op][1]
     summary_writer = \
-        tf.summary.create_file_writer('./graphsaint/tf/log')
+        tf.compat.v1.summary.FileWriter(log_dir(params["params_file"],
+                                                params["data_prefix"],
+                                                git_branch, git_rev,
+                                                timestamp),
+                                        sess.graph)
+    #summary_writer = \
+    #    tf.summary.create_file_writer('./graphsaint/tf/log')
+    summary_writer.add_summary(merged, misc_stats)
+
     # Init variables
     sess.run(tf.compat.v1.global_variables_initializer())
     return model, minibatch, sess, [merged,misc_stats], \
@@ -359,21 +390,25 @@ def model_fn(features, labels, mode, params):
     """
     #gnn = getattr(sys.modules[__name__], params["model"]["model"])(params)
 
-    prepare(features, labels, params)
+    model, minibatch, sess, train_stat, ph_misc_stat, summary_writer = \
+        prepare(features, labels, params)
 
     #outputs = gnn(features, labels, mode)
     #loss = gnn.build_total_loss(outputs, features, labels, mode)
+    loss = model.loss
 
-    #if mode == tf.estimator.ModeKeys.TRAIN:
-    #    train_op = gnn.build_train_ops(loss)
-    #    eval_metric_ops = None
-    #elif mode == tf.estimator.ModeKeys.EVAL:
-    #    train_op = None
-    #    eval_metric_ops = gnn.build_eval_metric_ops(outputs, features, labels)
-    #else:
-    #    raise ValueError(f"Mode {mode} not supported.")
+    if mode == tf.estimator.ModeKeys.TRAIN:
+        #train_op = gnn.build_train_ops(loss)
+        train_op = model.build_train_ops()
+        eval_metric_ops = None
+    elif mode == tf.estimator.ModeKeys.EVAL:
+        train_op = None
+        #eval_metric_ops = gnn.build_eval_metric_ops(outputs, features, labels)
+        eval_metric_ops = model.build_eval_metric_ops()
+    else:
+        raise ValueError(f"Mode {mode} not supported.")
 
-    #return tf.estimator.EstimatorSpec(
-    #    mode=mode, loss=loss, train_op=train_op, eval_metric_ops=eval_metric_ops
-    #)
-    return tf.estimator.EstimatorSpec(mode=mode)
+    return tf.estimator.EstimatorSpec(
+        mode=mode, loss=loss, train_op=train_op)#,
+#        eval_metric_ops=eval_metric_ops
+#    )
