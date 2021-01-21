@@ -1,5 +1,6 @@
 import tensorflow as tf
-from graphsaint.globals import *
+# changed globals
+from graphsaint.globals_tf import *
 import numpy as np
 
 # DISCLAIMER:
