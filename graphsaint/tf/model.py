@@ -20,9 +20,11 @@ class GraphSAINT:
             - sigmoid_loss: Set to true if nodes can belong to multiple classes
         '''
         if "attention" in arch_gcn:
+            print("using attention aggregator")
             self.aggregator_cls = layers.AttentionAggregator
             self.mulhead = int(arch_gcn['attention'])
         else:
+            print("using high order aggregator")
             self.aggregator_cls = layers.HighOrderAggregator
             self.mulhead = 1
         self.lr = train_params['lr']
@@ -44,7 +46,7 @@ class GraphSAINT:
         self.dim0_adj_sub = placeholders['dim0_adj_sub'] #adj_full_norm.shape[0]/8
         self.features = tf.Variable(tf.constant(features, dtype=DTYPE),
                                     trainable=False)
-#        self.dualGPU=args_global.dualGPU
+        #self.dualGPU=args_global.dualGPU
         _indices = np.column_stack(adj_full_norm.nonzero())
         _data = adj_full_norm.data
         _shape = adj_full_norm.shape
@@ -54,6 +56,11 @@ class GraphSAINT:
         self.sigmoid_loss = (arch_gcn['loss']=='sigmoid')
         _dims, self.order_layer, self.act_layer, self.bias_layer, \
             self.aggr_layer = parse_layer_yml(arch_gcn,features.shape[1])
+        print(_dims)
+        print(self.order_layer)
+        print(self.act_layer)
+        print(self.bias_layer)
+        print(self.aggr_layer)
         # get layer index for each conv layer, useful for jk net last layer
         # aggregation
         self.set_idx_conv()
@@ -86,6 +93,8 @@ class GraphSAINT:
              for l in range(len(dims)-1)]
         self.dims_weight = [(self.dims_feat[l],dims[l+1]) \
                             for l in range(len(dims)-1)]
+        print(self.dims_feat)
+        print(self.dims_weight)
 
     def build(self):
         """
@@ -161,6 +170,7 @@ class GraphSAINT:
 
     def get_aggregators(self,name=None):
         aggregators = []
+        print(self.num_layers)
         for layer in range(self.num_layers):
             aggregator = \
                 self.aggregator_cls(self.dims_weight[layer][0],
@@ -328,59 +338,66 @@ def prepare(features, labels, params):
     model = GraphSAINT(num_classes, placeholders, feats, arch_gcn,
                        train_params, adj_full_norm, logging=True)
 
-    # Initialize session
-    sess = \
-        tf.compat.v1.Session(config=\
-                             tf.compat.v1.ConfigProto(device_count={"CPU":40},
-                                                      inter_op_parallelism_threads=44,
-                                                      intra_op_parallelism_threads=44,
-                                                      log_device_placement=False))
-    ph_misc_stat = {'val_f1_micro': tf.compat.v1.placeholder(DTYPE, shape=()),
-                    'val_f1_macro': tf.compat.v1.placeholder(DTYPE, shape=()),
-                    'train_f1_micro': tf.compat.v1.placeholder(DTYPE,
-                                                               shape=()),
-                    'train_f1_macro': tf.compat.v1.placeholder(DTYPE,
-                                                               shape=()),
-                    'time_per_epoch': tf.compat.v1.placeholder(DTYPE,
-                                                               shape=()),
-                    'size_subgraph': tf.compat.v1.placeholder(tf.int32,
-                                                              shape=())}
-    merged = tf.compat.v1.summary.merge_all()
+#    # Initialize session
+#    sess = \
+#        tf.compat.v1.Session(config=\
+#                             tf.compat.v1.ConfigProto(device_count={"CPU":40},
+#                                                      inter_op_parallelism_threads=44,
+#                                                      intra_op_parallelism_threads=44,
+#                                                      log_device_placement=False))
+#    ph_misc_stat = {'val_f1_micro': tf.compat.v1.placeholder(DTYPE, shape=()),
+#                    'val_f1_macro': tf.compat.v1.placeholder(DTYPE, shape=()),
+#                    'train_f1_micro': tf.compat.v1.placeholder(DTYPE,
+#                                                               shape=()),
+#                    'train_f1_macro': tf.compat.v1.placeholder(DTYPE,
+#                                                               shape=()),
+#                    'time_per_epoch': tf.compat.v1.placeholder(DTYPE,
+#                                                               shape=()),
+#                    'size_subgraph': tf.compat.v1.placeholder(tf.int32,
+#                                                              shape=())}
+#    merged = tf.compat.v1.summary.merge_all()
+#
+#    with tf.compat.v1.name_scope('summary'):
+#        _misc_val_f1_micro = tf.compat.v1.summary.scalar('val_f1_micro',
+#                                                         ph_misc_stat['val_f1_micro'])
+#        _misc_val_f1_macro = tf.compat.v1.summary.scalar('val_f1_macro',
+#                                                         ph_misc_stat['val_f1_macro'])
+#        _misc_train_f1_micro = tf.compat.v1.summary.scalar('train_f1_micro',
+#                                                           ph_misc_stat['train_f1_micro'])
+#        _misc_train_f1_macro = tf.compat.v1.summary.scalar('train_f1_macro',
+#                                                           ph_misc_stat['train_f1_macro'])
+#        _misc_time_per_epoch = tf.compat.v1.summary.scalar('time_per_epoch',
+#                                                           ph_misc_stat['time_per_epoch'])
+#        _misc_size_subgraph = tf.compat.v1.summary.scalar('size_subgraph',
+#                                                          ph_misc_stat['size_subgraph'])
+#
+#    misc_stats = tf.compat.v1.summary.merge([_misc_val_f1_micro,
+#                                             _misc_val_f1_macro,
+#                                             _misc_train_f1_micro,
+#                                             _misc_train_f1_macro,
+#                                             _misc_time_per_epoch,
+#                                             _misc_size_subgraph])
+#    #op = sess.graph.get_operations()
+#    #[m.values() for m in op][1]
+#    summary_writer = None
+#    #summary_writer = \
+#    #    tf.compat.v1.summary.FileWriter(log_dir(params["params_file"],
+#    #                                            params["data_prefix"],
+#    #                                            git_branch, git_rev,
+#    #                                            timestamp),
+#    #                                    sess.graph, graph_def)
+#    #summary_writer = \
+#    #    tf.summary.create_file_writer('./graphsaint/tf/log')
+#    #tf.compat.v1.summary_writer.add_summary(merged, misc_stats)
+#
+#    # Init variables
+#    sess.run(tf.compat.v1.global_variables_initializer())
 
-    with tf.compat.v1.name_scope('summary'):
-        _misc_val_f1_micro = tf.compat.v1.summary.scalar('val_f1_micro',
-                                                         ph_misc_stat['val_f1_micro'])
-        _misc_val_f1_macro = tf.compat.v1.summary.scalar('val_f1_macro',
-                                                         ph_misc_stat['val_f1_macro'])
-        _misc_train_f1_micro = tf.compat.v1.summary.scalar('train_f1_micro',
-                                                           ph_misc_stat['train_f1_micro'])
-        _misc_train_f1_macro = tf.compat.v1.summary.scalar('train_f1_macro',
-                                                           ph_misc_stat['train_f1_macro'])
-        _misc_time_per_epoch = tf.compat.v1.summary.scalar('time_per_epoch',
-                                                           ph_misc_stat['time_per_epoch'])
-        _misc_size_subgraph = tf.compat.v1.summary.scalar('size_subgraph',
-                                                          ph_misc_stat['size_subgraph'])
-
-    misc_stats = tf.compat.v1.summary.merge([_misc_val_f1_micro,
-                                             _misc_val_f1_macro,
-                                             _misc_train_f1_micro,
-                                             _misc_train_f1_macro,
-                                             _misc_time_per_epoch,
-                                             _misc_size_subgraph])
-    #op = sess.graph.get_operations()
-    #[m.values() for m in op][1]
-    summary_writer = \
-        tf.compat.v1.summary.FileWriter(log_dir(params["params_file"],
-                                                params["data_prefix"],
-                                                git_branch, git_rev,
-                                                timestamp),
-                                        sess.graph)
-    #summary_writer = \
-    #    tf.summary.create_file_writer('./graphsaint/tf/log')
-    summary_writer.add_summary(merged, misc_stats)
-
-    # Init variables
-    sess.run(tf.compat.v1.global_variables_initializer())
+    sess = None
+    merged = None
+    misc_stats = None
+    ph_misc_stat = None
+    summary_writer = None
     return model, minibatch, sess, [merged,misc_stats], \
         ph_misc_stat, summary_writer
 
@@ -410,5 +427,5 @@ def model_fn(features, labels, mode, params):
 
     return tf.estimator.EstimatorSpec(
         mode=mode, loss=loss, train_op=train_op)#,
-#        eval_metric_ops=eval_metric_ops
-#    )
+    #    eval_metric_ops=eval_metric_ops
+    #)

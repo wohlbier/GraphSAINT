@@ -38,6 +38,13 @@ class Minibatch:
         s5=int(adj_full_norm.shape[0]/8*5)
         s6=int(adj_full_norm.shape[0]/8*6)
         s7=int(adj_full_norm.shape[0]/8*7)
+        print("s1: " + str(s1))
+        print("s2: " + str(s2))
+        print("s3: " + str(s3))
+        print("s4: " + str(s4))
+        print("s5: " + str(s5))
+        print("s6: " + str(s6))
+        print("s7: " + str(s7))
         self.dim0_adj_sub = adj_full_norm.shape[0]/8
         self.adj_full_norm_0=adj_full_norm[:s1,:]
         self.adj_full_norm_1=adj_full_norm[s1:s2,:]
