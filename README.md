@@ -9,6 +9,18 @@ conda install \
       tensorflow==2.3.0
 python graphsaint/setup.py build_ext --inplace
 ```
+
+```
+conda create -n graphsaint_1.15_env
+conda activate graphsaint_1.15_env
+conda install \
+      cython==0.29.21 \
+      pyyaml==5.3.1 \
+      scikit-learn==0.23.2 \
+      tensorflow==1.15.0
+python graphsaint/setup.py build_ext --inplace
+```
+
 Upgraded tf version
 ```
 tf_upgrade_v2 --intree tensorflow_version/ --outtree tensorflow_version_2 --reportfile report.txt

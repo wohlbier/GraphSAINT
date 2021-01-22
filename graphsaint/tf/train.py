@@ -183,7 +183,10 @@ def train_main_2(argv=None):
     args = parse_args()
     params = get_params(args.params, args)
 
-    config = tf.estimator.RunConfig()
+    config = tf.estimator.RunConfig(
+        model_dir=params['model_dir'],
+        save_checkpoints_steps=1000,
+    )
     est = tf.estimator.Estimator(
         model_fn,
         model_dir=params['model_dir'],
