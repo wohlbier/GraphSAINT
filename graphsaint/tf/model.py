@@ -153,8 +153,8 @@ class GraphSAINT:
                                  labels=self.placeholders['labels'])
         loss_terms_ndims = self.loss_terms.shape.ndims \
             if self.loss_terms.shape is not None else None
-        if loss_terms_ndims == 1:
-            self.loss_terms = tf.reshape(self.loss_terms,(-1,1))
+        #if loss_terms_ndims == 1: # jgw
+        self.loss_terms = tf.reshape(self.loss_terms,(-1,1))
         self._weight_loss_batch = \
             tf.nn.embedding_lookup(params=self.norm_loss,
                                    ids=self.node_subgraph)
