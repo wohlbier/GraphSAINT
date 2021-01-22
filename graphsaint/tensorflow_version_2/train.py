@@ -242,8 +242,8 @@ def train_main(argv=None):
     #print(train_data)
     print(arch_gcn)
     model,minibatch,sess,train_stat,ph_misc_stat,summary_writer = prepare(train_data,train_params,arch_gcn)
-#    ret = train(train_phases,model,minibatch,sess,train_stat,ph_misc_stat,summary_writer)
-#    return ret
+    ret = train(train_phases,model,minibatch,sess,train_stat,ph_misc_stat,summary_writer)
+    return ret
 
 if __name__ == '__main__':
     tf.compat.v1.disable_eager_execution()

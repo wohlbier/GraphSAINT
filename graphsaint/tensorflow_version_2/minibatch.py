@@ -29,8 +29,6 @@ class Minibatch:
         self.node_val = np.array(role['va'])
         self.node_test = np.array(role['te'])
 
-        print('nt: ' + str(len(self.node_train)))
-
         self.class_arr = class_arr
         self.adj_full_norm = adj_full_norm
         s1=int(adj_full_norm.shape[0]/8*1)
