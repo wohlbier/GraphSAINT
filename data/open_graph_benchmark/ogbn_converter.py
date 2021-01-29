@@ -16,15 +16,19 @@ Right now, ogbn-products and ogbn-arxiv can be converted by this script.
 datapath='/srv/scratch/ogb/datasets/cb/nodeproppred/'
 
 #dataset = PygNodePropPredDataset(name=sys.argv[1])
-dataset = PygNodePropPredDataset(name='ogbn-products',
+#dataset = PygNodePropPredDataset(name='ogbn-products',
+#                                 root=datapath)
+#save_dir = datapath + 'ogbn_products/GraphSAINT/'
+dataset = PygNodePropPredDataset(name='ogbn-arxiv',
                                  root=datapath)
+save_dir = datapath + 'ogbn_arxiv/GraphSAINT/'
+
 split_idx = dataset.get_idx_split()
 train_idx, valid_idx, test_idx = split_idx['train'], split_idx['valid'], split_idx['test']
 graph = dataset[0]
 num_node = graph.y.shape[0]
 # import pdb; pdb.set_trace()
 
-save_dir = datapath + 'ogbn_products/GraphSAINT/'
 try:
     os.mkdir(save_dir)
 except OSError as error:

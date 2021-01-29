@@ -383,8 +383,8 @@ def prepare(features, labels, params):
         tf.compat.v1.summary.FileWriter(log_dir(params["params_file"],
                                                 params["data_prefix"],
                                                 git_branch, git_rev,
-                                                timestamp))#,
-                                        #sess.graph, graph_def)
+                                                timestamp),
+                                        sess.graph)
     #summary_writer = \
     #    tf.summary.create_file_writer('./graphsaint/tf/log')
     #tf.compat.v1.summary_writer.add_summary(merged, misc_stats)

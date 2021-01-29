@@ -208,6 +208,8 @@ def load_data(prefix, normalize=True):
     adj_train = sp.sparse.load_npz('{}/adj_train.npz'.format(prefix)).astype(np.bool)
     role = json.load(open('{}/role.json'.format(prefix)))
     feats = np.load('{}/feats.npy'.format(prefix))
+    #feats = feats[:,0:4]
+    print(feats.shape)
     class_map = json.load(open('{}/class_map.json'.format(prefix)))
     class_map = {int(k):v for k,v in class_map.items()}
     assert len(class_map) == feats.shape[0]

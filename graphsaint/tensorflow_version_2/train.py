@@ -140,6 +140,9 @@ def train(train_phases,model,minibatch,\
     run_metadata = tf.compat.v1.RunMetadata()
     many_runs_timeline=[]       # only used when TF timeline is enabled
     for ip,phase in enumerate(train_phases):
+        print("for ip, phase")
+        print(ip)
+        print(phase)
         # We normally only have a single phase of training (see README for defn of 'phase').
         # On the other hand, our implementation does support multi-phase training.
         # e.g., you can use smaller subgraphs during initial epochs and larger subgraphs

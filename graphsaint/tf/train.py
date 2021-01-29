@@ -185,7 +185,7 @@ def train_main_2(argv=None):
 
     config = tf.estimator.RunConfig(
         model_dir=params['model_dir'],
-        save_checkpoints_steps=1000,
+        save_summary_steps=None,
     )
     est = tf.estimator.Estimator(
         model_fn,
