@@ -75,6 +75,7 @@ class JumpingKnowledge(Layer):
         """
         super(JumpingKnowledge,self).__init__(**kwargs)
         self.mode = mode
+        print("JumpingKnowledge, mode:" + str(self.mode))
         if not mode:
             return
         self.act = F_ACT[arch_gcn['act']]
@@ -204,6 +205,7 @@ class AttentionAggregator(Layer):
             self.mulhead = int(kwargs['mulhead'])
         else:
             self.mulhead = 1
+        print("AttentionAggregator, self.mulhead: " + str(self.mulhead))
         with tf.compat.v1.variable_scope(self.name + '_vars'):
             self.vars['order0_weights'] = glorot([dim_in,dim_out],name='order0_weights')
             for k in range(self.mulhead):

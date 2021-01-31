@@ -39,6 +39,7 @@ def evaluate_full_batch(sess,model,minibatch_iter,many_runs_timeline,mode):
     NOTE: HERE GCN RUNS THROUGH THE FULL GRAPH. HOWEVER, WE CALCULATE F1 SCORE
         FOR VALIDATION / TEST NODES ONLY.
     """
+    print("evaluate full batch")
     options = tf.compat.v1.RunOptions(trace_level=tf.compat.v1.RunOptions.FULL_TRACE)
     run_metadata = tf.compat.v1.RunMetadata()
     t1 = time.time()
@@ -61,6 +62,7 @@ def evaluate_full_batch(sess,model,minibatch_iter,many_runs_timeline,mode):
 def construct_placeholders(num_classes):
     placeholders = {
         'labels': tf.compat.v1.placeholder(DTYPE, shape=(None, num_classes), name='labels'),
+        # place holders have one subgraph
         'node_subgraph': tf.compat.v1.placeholder(tf.int32, shape=(None), name='node_subgraph'),
         'dropout': tf.compat.v1.placeholder(DTYPE, shape=(None), name='dropout'),
         'adj_subgraph' : tf.compat.v1.sparse_placeholder(DTYPE,name='adj_subgraph',shape=(None,None)),
@@ -140,12 +142,17 @@ def train(train_phases,model,minibatch,\
     run_metadata = tf.compat.v1.RunMetadata()
     many_runs_timeline=[]       # only used when TF timeline is enabled
     for ip,phase in enumerate(train_phases):
+        print("for ip, phase")
+        print(ip)
+        print(phase)
         # We normally only have a single phase of training (see README for defn of 'phase').
         # On the other hand, our implementation does support multi-phase training.
         # e.g., you can use smaller subgraphs during initial epochs and larger subgraphs
         #       when closer to convergence. -- This might speed up convergence.
         minibatch.set_sampler(phase)
+        print("done with set_sampler")
         num_batches = minibatch.num_training_batches()
+        print("num_batches: " + str(num_batches))
         printf('START PHASE {:4d}'.format(ip),style='underline')
         for e in range(epoch_ph_start,int(phase['end'])):
             printf('Epoch {:4d}'.format(e),style='bold')
@@ -190,6 +197,7 @@ def train(train_phases,model,minibatch,\
                     sess_eval=sess_cpu
             else:
                 sess_eval=sess
+
             loss_val,f1mic_val,f1mac_val,time_eval = \
                 evaluate_full_batch(sess_eval,model,minibatch,many_runs_timeline,mode='val')
             printf(' TRAIN (Ep avg): loss = {:.4f}\tmic = {:.4f}\tmac = {:.4f}\ttrain time = {:.4f} sec'.format(f_mean(l_loss_tr),f_mean(l_f1mic_tr),f_mean(l_f1mac_tr),time_train_ep))
@@ -237,9 +245,11 @@ def train(train_phases,model,minibatch,\
 
 def train_main(argv=None):
     train_params,train_phases,train_data,arch_gcn = parse_n_prepare(args_global)
+    print("train_params")
     print(train_params)
+    print("train_phases")
     print(train_phases)
-    #print(train_data)
+    print("arch_gcn")
     print(arch_gcn)
     model,minibatch,sess,train_stat,ph_misc_stat,summary_writer = prepare(train_data,train_params,arch_gcn)
     ret = train(train_phases,model,minibatch,sess,train_stat,ph_misc_stat,summary_writer)

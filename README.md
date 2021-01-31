@@ -1,4 +1,17 @@
 # jgw
+One `Epoch` consumes the entire graph.
+- We define an "epoch" as |V|/|V_s| iterations, where |V| is the number of
+  training nodes, and |V_s| is the average number of subgraph nodes. An
+  iteration is a single weight update step.
+
+A `minibatch` is a subgraph. The number minibatches covers the graph.
+
+In the Estimator API a subgraph is an example, and we run a batch size of 1.
+After the number of examples required to cover the graph are complete, a full
+graph evaluation is done.
+
+`100->256->256->256->47`
+
 ```
 conda create -n graphsaint_env
 conda activate graphsaint_env

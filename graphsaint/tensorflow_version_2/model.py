@@ -18,13 +18,16 @@ class GraphSAINT:
             - degrees: Numpy array with node degrees.
             - sigmoid_loss: Set to true if nodes can belong to multiple classes
         '''
+        print("GraphSAINT()")
         if "attention" in arch_gcn:
             self.aggregator_cls = layers.AttentionAggregator
             self.mulhead = int(arch_gcn['attention'])
         else:
             self.aggregator_cls = layers.HighOrderAggregator
             self.mulhead = 1
+        print("mulhead: " + str(self.mulhead))
         self.lr = train_params['lr']
+        # placeholders have one subgraph (?)
         self.node_subgraph = placeholders['node_subgraph']
         self.num_layers = len(arch_gcn['arch'].split('-'))
         self.weight_decay = train_params['weight_decay']
@@ -68,6 +71,10 @@ class GraphSAINT:
     def set_dims(self,dims):
         self.dims_feat = [dims[0]] + [((self.aggr_layer[l]=='concat')*self.order_layer[l]+1)*dims[l+1] for l in range(len(dims)-1)]
         self.dims_weight = [(self.dims_feat[l],dims[l+1]) for l in range(len(dims)-1)]
+        print("dims_feat")
+        print(self.dims_feat)
+        print("dims_weight")
+        print(self.dims_weight)
 
     def set_idx_conv(self):
         idx_conv = np.where(np.array(self.order_layer)>=1)[0]
@@ -78,7 +85,8 @@ class GraphSAINT:
             self.idx_conv = idx_conv
         else:
             self.idx_conv = list(np.where(np.array(self.order_layer)==1)[0])
-
+        print("idx_conv")
+        print(self.idx_conv)
 
     def build(self):
         """
@@ -153,6 +161,9 @@ class GraphSAINT:
 
     def aggregate_subgraph(self, batch_size=None, name=None, mode='train'):
         if mode == 'train':
+            # look up features per node in parallel
+            print("aggregate_subgraph")
+            print(self.features.shape)
             hidden = tf.nn.embedding_lookup(params=self.features, ids=self.node_subgraph)
             adj = self.adj_subgraph
         else:

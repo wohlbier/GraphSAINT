@@ -176,7 +176,7 @@ class Minibatch:
             adj = sp.csr_matrix((self.subgraphs_remaining_data.pop(),self.subgraphs_remaining_indices.pop(),\
                         self.subgraphs_remaining_indptr.pop()),shape=(self.node_subgraph.size,self.node_subgraph.size))
             adj_edge_index=self.subgraphs_remaining_edge_index.pop()
-            #print("{} nodes, {} edges, {} degree".format(self.node_subgraph.size,adj.size,adj.size/self.node_subgraph.size))
+            print("{} nodes, {} edges, {} degree".format(self.node_subgraph.size,adj.size,adj.size/self.node_subgraph.size))
             tt1 = time.time()
             assert len(self.node_subgraph) == adj.shape[0]
             norm_aggr(adj.data,adj_edge_index,self.norm_aggr_train,num_proc=args_global.num_cpu_core)
