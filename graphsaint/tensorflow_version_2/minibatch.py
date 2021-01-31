@@ -25,9 +25,13 @@ class Minibatch:
         class_arr: array of float (shape |V|xf)
                     storing initial feature vectors
         """
+        print("Minibatch()")
         self.node_train = np.array(role['tr'])
+        print("len(node_train): " + str(len(self.node_train)))
         self.node_val = np.array(role['va'])
+        print("len(node_val): " + str(len(self.node_val)))
         self.node_test = np.array(role['te'])
+        print("len(node_test): " + str(len(self.node_test)))
 
         self.class_arr = class_arr
         self.adj_full_norm = adj_full_norm

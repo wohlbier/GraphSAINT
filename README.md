@@ -10,6 +10,11 @@ In the Estimator API a subgraph is an example, and we run a batch size of 1.
 After the number of examples required to cover the graph are complete, a full
 graph evaluation is done.
 
+Subgrraphs for ogbn-products are sized such that 5 of the subgraphs nearly
+cover the whole graph. The leftover nodes are not enough to make a subgraph
+of a similar size to the others.
+
+
 `100->256->256->256->47`
 
 ```
