@@ -7,6 +7,10 @@ import tensorflow as tf
 import yaml
 from sklearn.preprocessing import StandardScaler
 
+from graphsaint.tf.minibatch import *
+
+DTYPE=tf.float32
+
 def parse_args():
     '''
     Parse command line args.
@@ -141,9 +145,6 @@ def set_cmdline_args(params, args):
     params["cs_ip"] = args.cs_ip
     params["data_prefix"] = args.data_prefix
 
-#_curdir = os.path.dirname(os.path.abspath(__file__))
-#DEFAULT_PARAMS_FILE = os.path.join(_curdir, 'configs/params_gcn.yaml')
-
 def load_data(prefix, normalize=True):
     """
     Load the various data files residing in the `prefix` directory.
@@ -208,8 +209,6 @@ def load_data(prefix, normalize=True):
     adj_train = sp.sparse.load_npz('{}/adj_train.npz'.format(prefix)).astype(np.bool)
     role = json.load(open('{}/role.json'.format(prefix)))
     feats = np.load('{}/feats.npy'.format(prefix))
-    #feats = feats[:,0:4]
-    print(feats.shape)
     class_map = json.load(open('{}/class_map.json'.format(prefix)))
     class_map = {int(k):v for k,v in class_map.items()}
     assert len(class_map) == feats.shape[0]
@@ -240,105 +239,131 @@ def process_graph_data(adj_full, adj_train, feats, class_map, role):
             class_arr[k][v-offset] = 1
     return adj_full, adj_train, feats, class_arr, role
 
-#def parse_layer_yml(arch_gcn,dim_input):
-#    """
-#    Parse the *.yml config file to retrieve the GNN structure.
-#    """
-#    num_layers = len(arch_gcn['arch'].split('-'))
-#    # set default values, then update by arch_gcn
-#    bias_layer = [arch_gcn['bias']]*num_layers
-#    act_layer = [arch_gcn['act']]*num_layers
-#    aggr_layer = [arch_gcn['aggr']]*num_layers
-#    dims_layer = [arch_gcn['dim']]*num_layers
-#    order_layer = [int(o) for o in arch_gcn['arch'].split('-')]
-#    return [dim_input]+dims_layer,order_layer,act_layer,bias_layer,aggr_layer
+def adj_norm(adj, deg=None, sort_indices=True):
+    """
+    Normalize adj according to the method of rw normalization.
+    Note that sym norm is used in the original GCN paper (kipf),
+    while rw norm is used in GraphSAGE and some other variants.
+    Here we don't perform sym norm since it doesn't seem to
+    help with accuracy improvement.
 
-#def log_dir(f_train_config,prefix,git_branch,git_rev,timestamp):
-#    import getpass
-#    log_dir = args_global.dir_log+"/log_train/" + prefix.split("/")[-1]
-#    log_dir += "/{ts}-{model}-{gitrev:s}/".format(
-#            model='graphsaint',
-#            gitrev=git_rev.strip(),
-#            ts=timestamp)
-#    if not os.path.exists(log_dir):
-#        os.makedirs(log_dir)
-#    if f_train_config != '':
-#        from shutil import copyfile
-#        copyfile(f_train_config,'{}/{}'.format(log_dir,f_train_config.split('/')[-1]))
-#    return log_dir
-#
-#def sess_dir(dims,train_config,prefix,git_branch,git_rev,timestamp):
-#    import getpass
-#    log_dir = "saved_models/" + prefix.split("/")[-1]
-#    log_dir += "/{ts}-{model}-{gitrev:s}-{layer}/".format(
-#            model='graphsaint',
-#            gitrev=git_rev.strip(),
-#            layer='-'.join(dims),
-#            ts=timestamp)
-#    if not os.path.exists(log_dir):
-#        os.makedirs(log_dir)
-#    return sess_dir
+    # Procedure:
+    #       1. adj add self-connection --> adj'
+    #       2. D' deg matrix from adj'
+    #       3. norm by D^{-1} x adj'
+    if sort_indices is True, we re-sort the indices of the returned adj
+    Note that after 'dot' the indices of a node would be in descending order
+    rather than ascending order
+    """
+    diag_shape = (adj.shape[0],adj.shape[1])
+    D = adj.sum(1).flatten() if deg is None else deg
+    norm_diag = sp.sparse.dia_matrix((1/D,0),shape=diag_shape)
+    adj_norm = norm_diag.dot(adj)
+    if sort_indices:
+        adj_norm.sort_indices()
+    return adj_norm
 
-#def adj_norm(adj, deg=None, sort_indices=True):
-#    """
-#    Normalize adj according to the method of rw normalization.
-#    Note that sym norm is used in the original GCN paper (kipf),
-#    while rw norm is used in GraphSAGE and some other variants.
-#    Here we don't perform sym norm since it doesn't seem to
-#    help with accuracy improvement.
-#
-#    # Procedure:
-#    #       1. adj add self-connection --> adj'
-#    #       2. D' deg matrix from adj'
-#    #       3. norm by D^{-1} x adj'
-#    if sort_indices is True, we re-sort the indices of the returned adj
-#    Note that after 'dot' the indices of a node would be in descending order
-#    rather than ascending order
-#    """
-#    diag_shape = (adj.shape[0],adj.shape[1])
-#    D = adj.sum(1).flatten() if deg is None else deg
-#    norm_diag = sp.dia_matrix((1/D,0),shape=diag_shape)
-#    adj_norm = norm_diag.dot(adj)
-#    if sort_indices:
-#        adj_norm.sort_indices()
-#    return adj_norm
-#
-#
-#
-#
-###################
-## PRINTING UTILS #
-##----------------#
-#
-#_bcolors = {'header': '\033[95m',
-#            'blue': '\033[94m',
-#            'green': '\033[92m',
-#            'yellow': '\033[93m',
-#            'red': '\033[91m',
-#            'bold': '\033[1m',
-#            'underline': '\033[4m'}
-#
-#
-#def printf(msg,style=''):
-#    if not style or style == 'black':
-#        print(msg)
-#    else:
-#        print("{color1}{msg}{color2}".format(color1=_bcolors[style],msg=msg,color2='\033[0m'))
+def construct_placeholders(num_classes):
+    placeholders = {
+        'labels':
+        tf.compat.v1.placeholder(
+            DTYPE, shape=(None, num_classes),name='labels'
+        ),
+        'node_subgraph':
+        tf.compat.v1.placeholder(
+            tf.int32, shape=(None), name='node_subgraph'
+        ),
+        'dropout':
+        tf.compat.v1.placeholder(
+            DTYPE, shape=(None), name='dropout'
+        ),
+        'adj_subgraph':
+        tf.compat.v1.sparse_placeholder(
+            DTYPE, name='adj_subgraph', shape=(None,None)
+        ),
+        'adj_subgraph_0':
+        tf.compat.v1.sparse_placeholder(
+            DTYPE, name='adj_subgraph_0'
+        ),
+        'adj_subgraph_1':
+        tf.compat.v1.sparse_placeholder(
+            DTYPE, name='adj_subgraph_1'
+        ),
+        'adj_subgraph_2':
+        tf.compat.v1.sparse_placeholder(
+            DTYPE, name='adj_subgraph_2'
+        ),
+        'adj_subgraph_3':
+        tf.compat.v1.sparse_placeholder(
+            DTYPE, name='adj_subgraph_3'
+        ),
+        'adj_subgraph_4':
+        tf.compat.v1.sparse_placeholder(
+            DTYPE, name='adj_subgraph_4'
+        ),
+        'adj_subgraph_5':
+        tf.compat.v1.sparse_placeholder(
+            DTYPE, name='adj_subgraph_5'
+        ),
+        'adj_subgraph_6':
+        tf.compat.v1.sparse_placeholder(
+            DTYPE, name='adj_subgraph_6'
+        ),
+        'adj_subgraph_7':
+        tf.compat.v1.sparse_placeholder(
+            DTYPE, name='adj_subgraph_7'
+        ),
+        'dim0_adj_sub':
+        tf.compat.v1.placeholder(
+            tf.int64,shape=(None), name='dim0_adj_sub'
+        ),
+        'norm_loss':
+        tf.compat.v1.placeholder(
+            DTYPE,shape=(None), name='norm_loss'
+        ),
+        'is_train':
+        tf.compat.v1.placeholder(
+            tf.bool, shape=(None), name='is_train'
+        )
+    }
+    return placeholders
+
+def create_training_examples(adj_full, adj_train, feats, class_map, role,
+                             params):
+    """
+    create the training examples
+    """
+    adj_full = adj_full.astype(np.int32)
+    adj_train = adj_train.astype(np.int32)
+    adj_full_norm = adj_norm(adj_full)
+    num_classes = class_map.shape[1]
+    print("num_classes: " + str(num_classes))
+
+    placeholders = construct_placeholders(num_classes)
+    minibatch = Minibatch(adj_full_norm, adj_train, role, class_map,
+                          placeholders, params["train_params"])
+    minibatch.set_sampler(params["phase"])
+    num_batches = minibatch.num_training_batches()
+    print("num_batches: " + str(num_batches))
+
+## return the input_fn
+#def get_input_fn():
 
 def input_fn(params, mode=tf.estimator.ModeKeys.TRAIN, input_context=None):
-    #return getattr(
-    #    sys.modules[__name__], params["train_input"]["data_processor"]
-    #)(params["train_input"]).create_tf_dataset(
-    #    mode=mode, input_context=input_context,
-    #)
-
     # relocated from parse_n_prepare
     print("Loading training data..")
-    temp_data = load_data(params["data_prefix"])
-    train_data = process_graph_data(*temp_data)
+    train_data = load_data(params["data_prefix"])
+    train_data = process_graph_data(*train_data)
     print("Done loading training data..")
 
+    # A single example is a subgraph. A full update is done on a single
+    # example.
+    print("Create training examples")
+    create_training_examples(*train_data, params)
+
+    # NOT CORRECT
     features = { "adj_full": train_data[0], "adj_train": train_data[1],
                  "feats": train_data[2], "role": train_data[4] }
     labels = { "class_arr": train_data[3] }
+    # return features and labels for subgraphs.
     return features, labels

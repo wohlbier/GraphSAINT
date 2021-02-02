@@ -7,7 +7,6 @@ import pdb
 from math import ceil
 import graphsaint.cython_sampler as cy
 
-
 class GraphSampler:
     """
     This is the sampler super-class. Any GraphSAINT sampler is supposed to perform

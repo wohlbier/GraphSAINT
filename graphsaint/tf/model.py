@@ -401,24 +401,26 @@ def model_fn(features, labels, mode, params):
     """
     #gnn = getattr(sys.modules[__name__], params["model"]["model"])(params)
 
-    model, minibatch, sess, train_stat, ph_misc_stat, summary_writer = \
-        prepare(features, labels, params)
+#    model, minibatch, sess, train_stat, ph_misc_stat, summary_writer = \
+#        prepare(features, labels, params)
+#
+#    #outputs = gnn(features, labels, mode)
+#    #loss = gnn.build_total_loss(outputs, features, labels, mode)
+#    loss = model.loss
+#
+#    if mode == tf.estimator.ModeKeys.TRAIN:
+#        #train_op = gnn.build_train_ops(loss)
+#        train_op = model.build_train_ops()
+#        eval_metric_ops = None
+#    elif mode == tf.estimator.ModeKeys.EVAL:
+#        train_op = None
+#        #eval_metric_ops = gnn.build_eval_metric_ops(outputs, features, labels)
+#        eval_metric_ops = model.build_eval_metric_ops()
+#    else:
+#        raise ValueError(f"Mode {mode} not supported.")
 
-    #outputs = gnn(features, labels, mode)
-    #loss = gnn.build_total_loss(outputs, features, labels, mode)
-    loss = model.loss
-
-    if mode == tf.estimator.ModeKeys.TRAIN:
-        #train_op = gnn.build_train_ops(loss)
-        train_op = model.build_train_ops()
-        eval_metric_ops = None
-    elif mode == tf.estimator.ModeKeys.EVAL:
-        train_op = None
-        #eval_metric_ops = gnn.build_eval_metric_ops(outputs, features, labels)
-        eval_metric_ops = model.build_eval_metric_ops()
-    else:
-        raise ValueError(f"Mode {mode} not supported.")
-
+    loss = None
+    train_op = None
     return tf.estimator.EstimatorSpec(
         mode=mode, loss=loss, train_op=train_op)#,
     #    eval_metric_ops=eval_metric_ops

@@ -35,11 +35,12 @@ timestamp = datetime.datetime.fromtimestamp(int(timestamp)).strftime('%Y-%m-%d %
 #parser.add_argument("--cpu_eval",default=False,action="store_true",help="whether to use CPU to do evaluation")
 #parser.add_argument("--saved_model_path",default="",type=str,help="path to pretrained model file")
 #args_global = parser.parse_args()
-#
-#
+
+
 #NUM_PAR_SAMPLER = args_global.num_cpu_core
-#SAMPLES_PER_PROC = -(-200 // NUM_PAR_SAMPLER) # round up division
-#
+NUM_PAR_SAMPLER = 20
+SAMPLES_PER_PROC = -(-200 // NUM_PAR_SAMPLER) # round up division
+
 #EVAL_VAL_EVERY_EP = 1       # get accuracy on the validation set every this # epochs
 #
 #
