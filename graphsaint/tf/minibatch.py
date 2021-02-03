@@ -1,12 +1,12 @@
 #from graphsaint.globals import *
 #import math
-#import scipy.sparse as sp
 #import scipy
-#import tensorflow as tf
+import scipy as sp
+import tensorflow as tf
 #from graphsaint.tf.inits import *
-#from graphsaint.utils import *
 from graphsaint.graph_samplers import *
-#from graphsaint.norm_aggr import *
+from graphsaint.norm_aggr import *
+from graphsaint.utils import adj_norm
 
 import numpy as np
 #import time
@@ -107,7 +107,7 @@ class Minibatch:
         elif self.method_sample == 'edge':
             self.size_subg_budget = train_phases['size_subg_edge']*2
             self.graph_sampler = edge_sampling(
-                self.adj_train,self.node_train,train_phases['size_subg_edge']
+                self.adj_train, self.node_train, train_phases['size_subg_edge']
             )
         elif self.method_sample == 'node':
             self.size_subg_budget = train_phases['size_subgraph']
@@ -164,69 +164,79 @@ class Minibatch:
             phase
         )
         t1 = time.time()
-        print('sampling 200 subgraphs:   time = {:.3f} sec'.format(t1-t0), end="\r")
+        print("sampling 200 subgraphs:   time = {:.3f} sec".format(t1-t0),
+              end="\r")
         self.subgraphs_remaining_indptr.extend(_indptr)
         self.subgraphs_remaining_indices.extend(_indices)
         self.subgraphs_remaining_data.extend(_data)
         self.subgraphs_remaining_nodes.extend(_v)
         self.subgraphs_remaining_edge_index.extend(_edge_index)
 
-#    def feed_dict(self,mode='train'):
-#        """ DONE """
-#        if mode in ['val','test']:
-#            self.node_subgraph = np.arange(self.class_arr.shape[0])
-#            adj = sp.csr_matrix(([],[],np.zeros(2)), shape=(1,self.node_subgraph.shape[0]))
-#            #adj = self.adj_full_norm
-#            adj_0 = self.adj_full_norm_0
-#            adj_1 = self.adj_full_norm_1
-#            adj_2 = self.adj_full_norm_2
-#            adj_3 = self.adj_full_norm_3
-#            adj_4 = self.adj_full_norm_4
-#            adj_5 = self.adj_full_norm_5
-#            adj_6 = self.adj_full_norm_6
-#            adj_7 = self.adj_full_norm_7
-#            _dropout = 0.
-#        else:
-#            assert mode == 'train'
-#            tt0=time.time()
-#            if len(self.subgraphs_remaining_nodes) == 0:
-#                self.par_graph_sample('train')
-#                print()
-#
-#            self.node_subgraph = self.subgraphs_remaining_nodes.pop()
-#            self.size_subgraph = len(self.node_subgraph)
-#            adj = sp.csr_matrix((self.subgraphs_remaining_data.pop(),self.subgraphs_remaining_indices.pop(),\
-#                        self.subgraphs_remaining_indptr.pop()),shape=(self.node_subgraph.size,self.node_subgraph.size))
-#            adj_edge_index=self.subgraphs_remaining_edge_index.pop()
-#            #print("{} nodes, {} edges, {} degree".format(self.node_subgraph.size,adj.size,adj.size/self.node_subgraph.size))
-#            tt1 = time.time()
-#            assert len(self.node_subgraph) == adj.shape[0]
-#            norm_aggr(adj.data,adj_edge_index,self.norm_aggr_train,num_proc=args_global.num_cpu_core)
-#
-#            tt2 = time.time()
-#            adj = adj_norm(adj, deg=self.deg_train[self.node_subgraph])
-#
-#            adj_0 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-#            adj_1 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-#            adj_2 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-#            adj_3 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-#            adj_4 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-#            adj_5 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-#            adj_6 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-#            adj_7 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-#
-#            _dropout = self.dropout
-#
-#            self.batch_num += 1
+
+    def subgraph_features_and_labels(self):
+        print("subgraph_features_and_labels")
+        # based on the feed_dict subroutine
+        self.node_subgraph = self.subgraphs_remaining_nodes.pop()
+        #print(self.node_subgraph)
+        self.size_subgraph = len(self.node_subgraph)
+        #print(self.size_subgraph)
+        adj = sp.sparse.csr_matrix(
+            (self.subgraphs_remaining_data.pop(),
+             self.subgraphs_remaining_indices.pop(),
+             self.subgraphs_remaining_indptr.pop()),
+            shape=(self.node_subgraph.size, self.node_subgraph.size)
+        )
+        adj_edge_index=self.subgraphs_remaining_edge_index.pop()
+        print(
+            "{} nodes, {} edges, {} degree".format(
+                self.node_subgraph.size,
+                adj.size, adj.size/self.node_subgraph.size
+            )
+        )
+        assert len(self.node_subgraph) == adj.shape[0]
+        norm_aggr(
+            adj.data, adj_edge_index, self.norm_aggr_train,
+            num_proc=NUM_PAR_SAMPLER
+        )
+
+        adj = adj_norm(adj, deg=self.deg_train[self.node_subgraph])
+        adj_0 = sp.sparse.csr_matrix(
+            ([],[],np.zeros(2)), shape=(1, self.node_subgraph.shape[0])
+        )
+        adj_1 = sp.sparse.csr_matrix(
+            ([],[],np.zeros(2)), shape=(1, self.node_subgraph.shape[0])
+        )
+        adj_2 = sp.sparse.csr_matrix(
+            ([],[],np.zeros(2)), shape=(1, self.node_subgraph.shape[0])
+        )
+        adj_3 = sp.sparse.csr_matrix(
+            ([],[],np.zeros(2)), shape=(1, self.node_subgraph.shape[0])
+        )
+        adj_4 = sp.sparse.csr_matrix(
+            ([],[],np.zeros(2)), shape=(1, self.node_subgraph.shape[0])
+        )
+        adj_5 = sp.sparse.csr_matrix(
+            ([],[],np.zeros(2)), shape=(1, self.node_subgraph.shape[0])
+        )
+        adj_6 = sp.sparse.csr_matrix(
+            ([],[],np.zeros(2)), shape=(1, self.node_subgraph.shape[0])
+        )
+        adj_7 = sp.sparse.csr_matrix(
+            ([],[],np.zeros(2)), shape=(1, self.node_subgraph.shape[0])
+        )
+
+        #    _dropout = self.dropout
+        #    self.batch_num += 1
 #        feed_dict = dict()
 #        feed_dict.update({self.placeholders['node_subgraph']: self.node_subgraph})
 #        feed_dict.update({self.placeholders['labels']: self.class_arr[self.node_subgraph]})
+        return self.class_arr[self.node_subgraph]
 #        feed_dict.update({self.placeholders['dropout']: _dropout})
 #        if mode in ['val','test']:
 #            feed_dict.update({self.placeholders['norm_loss']: self.norm_loss_test})
 #        else:
 #            feed_dict.update({self.placeholders['norm_loss']: self.norm_loss_train})
-#
+
 #        _num_edges = len(adj.nonzero()[1])
 #        _num_vertices = len(self.node_subgraph)
 #        _indices_ph = np.column_stack(adj.nonzero())
@@ -259,6 +269,122 @@ class Minibatch:
 #        else:
 #            feed_dict[self.placeholders['is_train']]=True
 #        return feed_dict, self.class_arr[self.node_subgraph]
+
+#    def features_and_labels(self):
+#        print("features_and_labels")
+#
+#        # for s in subgraphs:
+#        #    subgraph_features_and_labels
+#        labels = []
+#        while len(self.subgraphs_remaining_nodes) != 0:
+#            labels.append(
+#                tf.convert_to_tensor(self.subgraph_features_and_labels())
+#            )
+#        labels = tf.stack(labels)
+#        print(labels)
+
+    def feed_dict(self, mode='train'):
+        """ DONE """
+        if mode in ['val','test']:
+            self.node_subgraph = np.arange(self.class_arr.shape[0])
+            adj = sp.csr_matrix(([],[],np.zeros(2)), shape=(1,self.node_subgraph.shape[0]))
+            #adj = self.adj_full_norm
+            adj_0 = self.adj_full_norm_0
+            adj_1 = self.adj_full_norm_1
+            adj_2 = self.adj_full_norm_2
+            adj_3 = self.adj_full_norm_3
+            adj_4 = self.adj_full_norm_4
+            adj_5 = self.adj_full_norm_5
+            adj_6 = self.adj_full_norm_6
+            adj_7 = self.adj_full_norm_7
+            _dropout = 0.
+        else:
+            assert mode == 'train'
+            tt0=time.time()
+            if len(self.subgraphs_remaining_nodes) == 0:
+                self.par_graph_sample('train')
+                print()
+
+            self.node_subgraph = self.subgraphs_remaining_nodes.pop()
+            self.size_subgraph = len(self.node_subgraph)
+            adj = sp.csr_matrix((self.subgraphs_remaining_data.pop(),self.subgraphs_remaining_indices.pop(),\
+                        self.subgraphs_remaining_indptr.pop()),shape=(self.node_subgraph.size,self.node_subgraph.size))
+            adj_edge_index=self.subgraphs_remaining_edge_index.pop()
+            #print("{} nodes, {} edges, {} degree".format(self.node_subgraph.size,adj.size,adj.size/self.node_subgraph.size))
+            tt1 = time.time()
+            assert len(self.node_subgraph) == adj.shape[0]
+            norm_aggr(adj.data,adj_edge_index,self.norm_aggr_train,num_proc=args_global.num_cpu_core)
+
+            tt2 = time.time()
+            adj = adj_norm(adj, deg=self.deg_train[self.node_subgraph])
+
+            adj_0 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_1 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_2 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_3 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_4 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_5 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_6 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_7 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+
+            _dropout = self.dropout
+
+            self.batch_num += 1
+        feed_dict = dict()
+        feed_dict.update({self.placeholders['node_subgraph']: self.node_subgraph})
+        feed_dict.update({self.placeholders['labels']: self.class_arr[self.node_subgraph]})
+        feed_dict.update({self.placeholders['dropout']: _dropout})
+        if mode in ['val','test']:
+            feed_dict.update({self.placeholders['norm_loss']: self.norm_loss_test})
+        else:
+            feed_dict.update({self.placeholders['norm_loss']: self.norm_loss_train})
+
+        _num_edges = len(adj.nonzero()[1])
+        _num_vertices = len(self.node_subgraph)
+        _indices_ph = np.column_stack(adj.nonzero())
+        _shape_ph = adj.shape
+        feed_dict.update(
+            {self.placeholders['adj_subgraph']:
+             tf.compat.v1.SparseTensorValue(_indices_ph,adj.data,_shape_ph)}
+        )
+        feed_dict.update(
+            {self.placeholders['adj_subgraph_0']:
+            tf.compat.v1.SparseTensorValue(np.column_stack(adj_0.nonzero()),
+                                           adj_0.data, adj_0.shape)}
+        )
+        feed_dict.update(
+            {self.placeholders['adj_subgraph_1']:
+            tf.compat.v1.SparseTensorValue(np.column_stack(adj_1.nonzero()),
+                                           adj_1.data, adj_1.shape)}
+        )
+        feed_dict.update(
+            {self.placeholders['adj_subgraph_2']:
+            tf.compat.v1.SparseTensorValue(np.column_stack(adj_2.nonzero()),
+                                           adj_2.data, adj_2.shape)}
+        )
+        feed_dict.update(
+            {self.placeholders['adj_subgraph_3']:
+            tf.compat.v1.SparseTensorValue(np.column_stack(adj_3.nonzero()),
+                                           adj_3.data, adj_3.shape)}
+        )
+        feed_dict.update({self.placeholders['adj_subgraph_4']: \
+            tf.compat.v1.SparseTensorValue(np.column_stack(adj_4.nonzero()),adj_4.data,adj_4.shape)})
+        feed_dict.update({self.placeholders['adj_subgraph_5']: \
+            tf.compat.v1.SparseTensorValue(np.column_stack(adj_5.nonzero()),adj_5.data,adj_5.shape)})
+        feed_dict.update({self.placeholders['adj_subgraph_6']: \
+            tf.compat.v1.SparseTensorValue(np.column_stack(adj_6.nonzero()),adj_6.data,adj_6.shape)})
+        feed_dict.update({self.placeholders['adj_subgraph_7']: \
+            tf.compat.v1.SparseTensorValue(np.column_stack(adj_7.nonzero()),adj_7.data,adj_7.shape)})
+        feed_dict.update({self.placeholders['dim0_adj_sub']:\
+            self.dim0_adj_sub})
+        tt3=time.time()
+        # if mode in ['train']:
+        #     print("t1:{:.3f} t2:{:.3f} t3:{:.3f}".format(tt0-tt1,tt2-tt1,tt3-tt2))
+        if mode in ['val','test']:
+            feed_dict[self.placeholders['is_train']]=False
+        else:
+            feed_dict[self.placeholders['is_train']]=True
+        return feed_dict, self.class_arr[self.node_subgraph]
 
     def num_training_batches(self):
         """ DONE """

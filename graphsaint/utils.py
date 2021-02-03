@@ -66,17 +66,12 @@ def load_data(prefix, normalize=True):
     assert len(class_map) == feats.shape[0]
     # ---- normalize feats ----
     train_nodes = np.array(list(set(adj_train.nonzero()[0])))
-    print('tn: ' + str(len(train_nodes)))
     train_feats = feats[train_nodes]
-    print('tf.shape: ' + str(train_feats.shape))
     scaler = StandardScaler()
     scaler.fit(train_feats)
     feats = scaler.transform(feats)
     # -------------------------
-    print('at.shape: ' + str(adj_train.shape))
-    print('af.shape: ' + str(adj_full.shape))
     return adj_full, adj_train, feats, class_map, role
-
 
 def process_graph_data(adj_full, adj_train, feats, class_map, role):
     """

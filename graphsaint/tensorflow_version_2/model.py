@@ -150,9 +150,10 @@ class GraphSAINT:
             aggregators.append(aggregator)
         return aggregators
 
-
     def aggregate_subgraph(self, batch_size=None, name=None, mode='train'):
+        print("aggregate_subgraph")
         if mode == 'train':
+            # look up features in parallel
             hidden = tf.nn.embedding_lookup(params=self.features, ids=self.node_subgraph)
             adj = self.adj_subgraph
         else:
