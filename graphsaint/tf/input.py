@@ -346,6 +346,13 @@ def create_training_examples(adj_full, adj_train, feats, class_map, role,
     num_batches = minibatch.num_training_batches()
     print("num_batches: " + str(num_batches))
 
+    # need a data structure that has
+    # per subgraph
+    # - adj_norm, node ids, features, labels
+    # list of all subgraphs
+
+    #return features, labels
+
 ## return the input_fn
 #def get_input_fn():
 
