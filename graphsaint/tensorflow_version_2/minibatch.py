@@ -243,6 +243,11 @@ class Minibatch:
 
         ## getting types in feed_dict
         #k = [k for k in feed_dict.keys()]
+        #for k,v in feed_dict.items():
+        #    print('key: ', end='')
+        #    print(k)
+        #    print('value: ', end='')
+        #    print(v)
         #t = [type(k) for k in feed_dict.keys()]
         #print(k)
         #print(t)
