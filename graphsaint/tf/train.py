@@ -194,10 +194,14 @@ def train_main_2(argv=None):
         config=config,
     )
 
+    input_fn, input_hook = get_input_fn(params, tf.estimator.ModeKeys.TRAIN)
+
     if params['mode'] == 'train':
         est.train(
-            input_fn=lambda: input_fn(params, tf.estimator.ModeKeys.TRAIN),
-            steps=params['training']['steps']
+            #input_fn=lambda: input_fn(params, tf.estimator.ModeKeys.TRAINp),
+            input_fn=input_fn,
+            steps=params['training']['steps'],
+            hooks=[input_hook]
         )
     elif params['mode'] == 'eval':
         est.evaluate(

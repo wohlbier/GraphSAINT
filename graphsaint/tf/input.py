@@ -357,16 +357,31 @@ def create_training_examples(adj_full, adj_train, feats, class_map, role,
     #return features, labels
     return minibatch
 
-def _generator(minibatch):
-    minibatch.shuffle()
-    while not minibatch.end():
-        feed_dict, labels = minibatch.feed_dict(mode='train')
-        yield feed_dict, labels
+class IteratorInitializerHook(tf.estimator.SessionRunHook):
+    """Hook to initialise data iterator after Session is created."""
+
+    def __init__(self):
+        super(IteratorInitializerHook, self).__init__()
+        self.iterator_initializer_func = None
+
+    def after_create_session(self, session, coord):
+        """Initialise the iterator after the session has been created."""
+        self.iterator_initializer_func(session)
+
+
+def generator(params, minibatch):
+    end = params["phase"]["end"]
+    def _generator():
+        for _ in range(end):
+            minibatch.shuffle()
+            while not minibatch.end():
+                feed_dict, labels = minibatch.feed_dict(mode='train')
+                yield feed_dict, labels
+    return _generator
 
 # return the input_fn
-def get_input_fn():
+def get_input_fn(params, mode):
    iterator_initializer_hook = IteratorInitializerHook()
-
 
    def input_fn(params, mode=tf.estimator.ModeKeys.TRAIN, input_context=None):
        # relocated from parse_n_prepare
@@ -381,8 +396,24 @@ def get_input_fn():
        minibatch = create_training_examples(*train_data, params)
 
        dataset = tf.data.Dataset.from_generator(
-           _generator(minibatch), output_types={}
+           generator(params, minibatch),
+           output_types=dict(),
+#           output_shapes=tf.TensorShape([])
        )
+
+       iterator = tf.compat.v1.data.make_initializable_iterator(dataset)
+       next_example, next_label = iterator.get_next()
+#       # Set runhook to initialize iterator
+#       #iterator_initializer_hook.iterator_initializer_func = \
+#       #    lambda sess: sess.run(
+#       #        iterator.initializer,
+#       #        feed_dict={images_placeholder: images,
+#       #                   labels_placeholder: labels})
+#       # Return batched (features, labels)
+       return next_example, next_label
+
+   return input_fn, iterator_initializer_hook
+
 
 #	    # NOT CORRECT
 #	    features = { "adj_full": train_data[0], "adj_train": train_data[1],
@@ -390,3 +421,8 @@ def get_input_fn():
 #	    labels = { "class_arr": train_data[3] }
 #	    # return features and labels for subgraphs.
 #	    return features, labels
+
+
+# feed_dict
+# [<tf.Tensor 'node_subgraph:0' shape=<unknown> dtype=int32>, <tf.Tensor 'labels:0' shape=(None, 47) dtype=float32>, <tf.Tensor 'dropout:0' shape=<unknown> dtype=float32>, <tf.Tensor 'norm_loss:0' shape=<unknown> dtype=float32>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3eac3df0>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3562f3d0>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3562f220>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3562f820>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3562fb20>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3eaabf70>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3eac3850>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3eac3970>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3eac33d0>, <tf.Tensor 'dim0_adj_sub:0' shape=<unknown> dtype=int64>, <tf.Tensor 'is_train:0' shape=<unknown> dtype=bool>]
+# [<class 'tensorflow.python.framework.ops.Tensor'>, <class 'tensorflow.python.framework.ops.Tensor'>, <class 'tensorflow.python.framework.ops.Tensor'>, <class 'tensorflow.python.framework.ops.Tensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.ops.Tensor'>, <class 'tensorflow.python.framework.ops.Tensor'>]
