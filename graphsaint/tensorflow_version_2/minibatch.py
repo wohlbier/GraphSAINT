@@ -240,6 +240,13 @@ class Minibatch:
             feed_dict[self.placeholders['is_train']]=False
         else:
             feed_dict[self.placeholders['is_train']]=True
+
+        ## getting types in feed_dict
+        #k = [k for k in feed_dict.keys()]
+        #t = [type(k) for k in feed_dict.keys()]
+        #print(k)
+        #print(t)
+
         return feed_dict, self.class_arr[self.node_subgraph]
 
 
