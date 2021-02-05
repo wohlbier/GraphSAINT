@@ -194,7 +194,9 @@ def train_main_2(argv=None):
         config=config,
     )
 
-    input_fn, input_hook = get_input_fn(params, tf.estimator.ModeKeys.TRAIN)
+    input_fn, input_hook = get_input_fn(
+        params, tf.estimator.ModeKeys.TRAIN
+    )
 
     if params['mode'] == 'train':
         est.train(

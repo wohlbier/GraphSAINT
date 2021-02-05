@@ -10,7 +10,7 @@ from graphsaint.tf.minibatch import *
 class GraphSAINT:
 
     def __init__(self, num_classes, placeholders, features,
-            arch_gcn, train_params, adj_full_norm, **kwargs):
+                 arch_gcn, train_params, adj_full_norm, **kwargs):
         '''
         Args:
             - placeholders: TensorFlow placeholder object.
@@ -399,7 +399,13 @@ def model_fn(features, labels, mode, params):
     """
     The model function to be used with TF estimator API
     """
+    print("model_fn")
     #gnn = getattr(sys.modules[__name__], params["model"]["model"])(params)
+
+    #print(features, labels)
+    print(features)
+    #for f in features:
+    #    print(f)
 
 #    model, minibatch, sess, train_stat, ph_misc_stat, summary_writer = \
 #        prepare(features, labels, params)

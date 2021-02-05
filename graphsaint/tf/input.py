@@ -343,6 +343,7 @@ def create_training_examples(adj_full, adj_train, feats, class_map, role,
     placeholders = construct_placeholders(num_classes)
     minibatch = Minibatch(adj_full_norm, adj_train, role, class_map,
                           placeholders, params["train_params"])
+
     minibatch.set_sampler(params["phase"])
     num_batches = minibatch.num_training_batches()
     print("num_batches: " + str(num_batches))
@@ -355,7 +356,48 @@ def create_training_examples(adj_full, adj_train, feats, class_map, role,
     #minibatch.features_and_labels()
 
     #return features, labels
-    return minibatch
+    return minibatch, num_classes, placeholders
+
+#FEED_DICT_TYPES = {
+#    'Tensor("node_subgraph:0", dtype=int32)': tf.int32,
+#
+#    'Tensor("labels:0", shape=(None, 47), dtype=float32)': tf.float32,
+#
+#    'Tensor("dropout:0", dtype=float32)': tf.float32,
+#
+#    'Tensor("norm_loss:0", dtype=float32)': tf.float32,
+#
+#    'SparseTensor(indices=Tensor("adj_subgraph/indices:0", shape=(None, 2), dtype=int64), values=Tensor("adj_subgraph/values:0", shape=(None,), dtype=float32), dense_shape=Tensor("adj_subgraph/shape:0", shape=(2,), dtype=int64))':
+#    tf.SparseTensor,
+#
+#    'SparseTensor(indices=Tensor("adj_subgraph_0/indices:0", shape=(None, None), dtype=int64), values=Tensor("adj_subgraph_0/values:0", shape=(None,), dtype=float32), dense_shape=Tensor("adj_subgraph_0/shape:0", shape=(None,), dtype=int64))':
+#    tf.SparseTensor,
+#
+#    'SparseTensor(indices=Tensor("adj_subgraph_1/indices:0", shape=(None, None), dtype=int64), values=Tensor("adj_subgraph_1/values:0", shape=(None,), dtype=float32), dense_shape=Tensor("adj_subgraph_1/shape:0", shape=(None,), dtype=int64))':
+#    tf.SparseTensor,
+#
+#    'SparseTensor(indices=Tensor("adj_subgraph_2/indices:0", shape=(None, None), dtype=int64), values=Tensor("adj_subgraph_2/values:0", shape=(None,), dtype=float32), dense_shape=Tensor("adj_subgraph_2/shape:0", shape=(None,), dtype=int64))':
+#    tf.SparseTensor,
+#
+#    'SparseTensor(indices=Tensor("adj_subgraph_3/indices:0", shape=(None, None), dtype=int64), values=Tensor("adj_subgraph_3/values:0", shape=(None,), dtype=float32), dense_shape=Tensor("adj_subgraph_3/shape:0", shape=(None,), dtype=int64))':
+#    tf.SparseTensor,
+#
+#    'SparseTensor(indices=Tensor("adj_subgraph_4/indices:0", shape=(None, None), dtype=int64), values=Tensor("adj_subgraph_4/values:0", shape=(None,), dtype=float32), dense_shape=Tensor("adj_subgraph_4/shape:0", shape=(None,), dtype=int64))':
+#    tf.SparseTensor,
+#
+#    'SparseTensor(indices=Tensor("adj_subgraph_5/indices:0", shape=(None, None), dtype=int64), values=Tensor("adj_subgraph_5/values:0", shape=(None,), dtype=float32), dense_shape=Tensor("adj_subgraph_5/shape:0", shape=(None,), dtype=int64))':
+#    tf.SparseTensor,
+#
+#    'SparseTensor(indices=Tensor("adj_subgraph_6/indices:0", shape=(None, None), dtype=int64), values=Tensor("adj_subgraph_6/values:0", shape=(None,), dtype=float32), dense_shape=Tensor("adj_subgraph_6/shape:0", shape=(None,), dtype=int64))':
+#    tf.SparseTensor,
+#
+#    'SparseTensor(indices=Tensor("adj_subgraph_7/indices:0", shape=(None, None), dtype=int64), values=Tensor("adj_subgraph_7/values:0", shape=(None,), dtype=float32), dense_shape=Tensor("adj_subgraph_7/shape:0", shape=(None,), dtype=int64))':
+#    tf.SparseTensor,
+#
+#    'Tensor("dim0_adj_sub:0", dtype=int64)': tf.int64,
+#
+#    'Tensor("is_train:0", dtype=bool)': tf.bool
+#}
 
 class IteratorInitializerHook(tf.estimator.SessionRunHook):
     """Hook to initialise data iterator after Session is created."""
@@ -366,18 +408,28 @@ class IteratorInitializerHook(tf.estimator.SessionRunHook):
 
     def after_create_session(self, session, coord):
         """Initialise the iterator after the session has been created."""
+        print("after_create_session")
         self.iterator_initializer_func(session)
 
+def generator(params, minibatch, train_data):
 
-def generator(params, minibatch):
+    (adj_full, adj_train, feats, class_map, role) = train_data
+    print(class_map.dtype)
+
     end = params["phase"]["end"]
     def _generator():
-        for _ in range(end):
+        for i in range(end):
             minibatch.shuffle()
             while not minibatch.end():
                 feed_dict, labels = minibatch.feed_dict(mode='train')
-                yield feed_dict, labels
+                yield (
+                    (adj_full.indices, adj_full.data, adj_full.shape),
+#                    class_map
+                )
     return _generator
+
+#def feed_fn(minibatch):
+#    return minibatch.feed_dict(mode='train')
 
 # return the input_fn
 def get_input_fn(params, mode):
@@ -393,27 +445,36 @@ def get_input_fn(params, mode):
        # A single example is a subgraph. A full update is done on a single
        # example.
        print("Create training examples")
-       minibatch = create_training_examples(*train_data, params)
-
-       dataset = tf.data.Dataset.from_generator(
-           generator(params, minibatch),
-           output_types=dict(),
-#           output_shapes=tf.TensorShape([])
+       minibatch, num_classes, placeholders = create_training_examples(
+           *train_data, params
        )
 
-       iterator = tf.compat.v1.data.make_initializable_iterator(dataset)
+       dataset = tf.compat.v1.data.Dataset.from_generator(
+           generator(params, minibatch, train_data),
+           output_types=(
+               (tf.int64, tf.bool, tf.int64),
+#               tf.int32
+           )
+       )
+       dataset = dataset.map(
+           lambda i, d, s: tf.SparseTensor(i, d, s)
+       )
+       iterator = dataset.make_one_shot_iterator()
+
        next_example, next_label = iterator.get_next()
+
 #       # Set runhook to initialize iterator
-#       #iterator_initializer_hook.iterator_initializer_func = \
-#       #    lambda sess: sess.run(
-#       #        iterator.initializer,
-#       #        feed_dict={images_placeholder: images,
-#       #                   labels_placeholder: labels})
-#       # Return batched (features, labels)
+#       iterator_initializer_hook.iterator_initializer_func = \
+#           lambda sess: sess.run(
+#               iterator.initializer,
+#               feed_dict=minibatch.feed_dict()
+#           )
+#
+#       #feed_hook = [tf.estimator.FeedFnHook(lambda: feed_fn(minibatch))]
+#
        return next_example, next_label
 
-   return input_fn, iterator_initializer_hook
-
+   return input_fn, iterator_initializer_hook #, feed_hook
 
 #	    # NOT CORRECT
 #	    features = { "adj_full": train_data[0], "adj_train": train_data[1],
@@ -421,8 +482,3 @@ def get_input_fn(params, mode):
 #	    labels = { "class_arr": train_data[3] }
 #	    # return features and labels for subgraphs.
 #	    return features, labels
-
-
-# feed_dict
-# [<tf.Tensor 'node_subgraph:0' shape=<unknown> dtype=int32>, <tf.Tensor 'labels:0' shape=(None, 47) dtype=float32>, <tf.Tensor 'dropout:0' shape=<unknown> dtype=float32>, <tf.Tensor 'norm_loss:0' shape=<unknown> dtype=float32>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3eac3df0>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3562f3d0>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3562f220>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3562f820>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3562fb20>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3eaabf70>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3eac3850>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3eac3970>, <tensorflow.python.framework.sparse_tensor.SparseTensor object at 0x7fea3eac33d0>, <tf.Tensor 'dim0_adj_sub:0' shape=<unknown> dtype=int64>, <tf.Tensor 'is_train:0' shape=<unknown> dtype=bool>]
-# [<class 'tensorflow.python.framework.ops.Tensor'>, <class 'tensorflow.python.framework.ops.Tensor'>, <class 'tensorflow.python.framework.ops.Tensor'>, <class 'tensorflow.python.framework.ops.Tensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.sparse_tensor.SparseTensor'>, <class 'tensorflow.python.framework.ops.Tensor'>, <class 'tensorflow.python.framework.ops.Tensor'>]

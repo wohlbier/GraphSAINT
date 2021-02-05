@@ -287,7 +287,7 @@ class Minibatch:
         """ DONE """
         if mode in ['val','test']:
             self.node_subgraph = np.arange(self.class_arr.shape[0])
-            adj = sp.csr_matrix(([],[],np.zeros(2)), shape=(1,self.node_subgraph.shape[0]))
+            adj = sp.sparse.csr_matrix(([],[],np.zeros(2)), shape=(1,self.node_subgraph.shape[0]))
             #adj = self.adj_full_norm
             adj_0 = self.adj_full_norm_0
             adj_1 = self.adj_full_norm_1
@@ -307,25 +307,32 @@ class Minibatch:
 
             self.node_subgraph = self.subgraphs_remaining_nodes.pop()
             self.size_subgraph = len(self.node_subgraph)
-            adj = sp.csr_matrix((self.subgraphs_remaining_data.pop(),self.subgraphs_remaining_indices.pop(),\
+            adj = sp.sparse.csr_matrix((self.subgraphs_remaining_data.pop(),self.subgraphs_remaining_indices.pop(),\
                         self.subgraphs_remaining_indptr.pop()),shape=(self.node_subgraph.size,self.node_subgraph.size))
             adj_edge_index=self.subgraphs_remaining_edge_index.pop()
-            #print("{} nodes, {} edges, {} degree".format(self.node_subgraph.size,adj.size,adj.size/self.node_subgraph.size))
+            print(
+                "{} nodes, {} edges, {} degree".format(self.node_subgraph.size,
+                                                       adj.size,
+                                                       adj.size/self.node_subgraph.size)
+            )
             tt1 = time.time()
             assert len(self.node_subgraph) == adj.shape[0]
-            norm_aggr(adj.data,adj_edge_index,self.norm_aggr_train,num_proc=args_global.num_cpu_core)
+            norm_aggr(
+                adj.data, adj_edge_index, self.norm_aggr_train,
+                num_proc=NUM_PAR_SAMPLER
+            )
 
             tt2 = time.time()
             adj = adj_norm(adj, deg=self.deg_train[self.node_subgraph])
 
-            adj_0 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-            adj_1 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-            adj_2 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-            adj_3 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-            adj_4 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-            adj_5 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-            adj_6 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
-            adj_7 = sp.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_0 = sp.sparse.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_1 = sp.sparse.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_2 = sp.sparse.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_3 = sp.sparse.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_4 = sp.sparse.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_5 = sp.sparse.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_6 = sp.sparse.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
+            adj_7 = sp.sparse.csr_matrix(([],[],np.zeros(2)),shape=(1,self.node_subgraph.shape[0]))
 
             _dropout = self.dropout
 
