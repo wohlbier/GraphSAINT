@@ -17,6 +17,31 @@ of a similar size to the others.
 
 `100->256->256->256->47`
 
+Results for ogbn-arxiv.
+```
+python -m graphsaint.tensorflow_version_2.train --data_prefix /srv/scratch/ogb/datasets/cb/nodeproppred/ogbn_arxiv/GraphSAINT --train_config ./train_config/open_graph_benchmark/ogbn-products_3_e_gat.yml --gpu -1
+
+Epoch   19
+25007 nodes, 107863 edges, 4.3133122725636825 degree
+25021 nodes, 109374 edges, 4.371288117980896 degree
+25142 nodes, 108637 edges, 4.320937077400366 degree
+evaluate full batch
+ TRAIN (Ep avg): loss = 1.0771	mic = 0.6401	mac = 0.2947	train time = 14.7812 sec
+ VALIDATION:     loss = 1.2568	mic = 0.6435	mac = 0.3011
+  Saving models ...
+Optimization Finished!
+INFO:tensorflow:Restoring parameters from ./models/saved_model_2021-02-05 17-07-01.chkpt
+I0205 17:15:10.726121 139677277980480 saver.py:1293] Restoring parameters from ./models/saved_model_2021-02-05 17-07-01.chkpt
+evaluate full batch
+Full validation (Epoch   19):
+  F1_Micro = 0.6435	F1_Macro = 0.3011
+evaluate full batch
+Full test stats:
+  F1_Micro = 0.6430	F1_Macro = 0.2912
+Total training time: 329.12 sec
+```
+
+
 ```
 conda create -n graphsaint_env
 conda activate graphsaint_env

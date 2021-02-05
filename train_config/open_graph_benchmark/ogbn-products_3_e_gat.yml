@@ -13,7 +13,7 @@ params:
     sample_coverage: 1000
     eval_val_every: 10      # [optional] how often do you run on validation set
 phase:
-  - end: 200
+  - end: 20
     sampler: 'edge'
     size_subg_edge: 20000
 
