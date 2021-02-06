@@ -20,9 +20,11 @@ class GraphSAINT:
         '''
         print("GraphSAINT()")
         if "attention" in arch_gcn:
+            print("using attention aggregator")
             self.aggregator_cls = layers.AttentionAggregator
             self.mulhead = int(arch_gcn['attention'])
         else:
+            print("using high order aggregator")
             self.aggregator_cls = layers.HighOrderAggregator
             self.mulhead = 1
         print("mulhead: " + str(self.mulhead))
