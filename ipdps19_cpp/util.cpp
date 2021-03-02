@@ -23,7 +23,7 @@ void bind_to_proc(int pid) {
     cpu_set_t was_mask;
     CPU_ZERO(&new_mask);
     CPU_SET((long long)pid,&new_mask);
-    if (sched_getaffinity(0, sizeof(was_mask), &was_mask) == -1) { 
+    if (sched_getaffinity(0, sizeof(was_mask), &was_mask) == -1) {
         printf("Error: sched_getaffinity(.., sizeof(was_mask), &was_mask)\n");
     }
     if (sched_setaffinity(0, sizeof(new_mask), &new_mask) == -1) {
@@ -67,11 +67,11 @@ void print_stat_time(s_stat_time time_arr) {
         printf("\tbackward weights(%3d): %.4fs\n", l, avg_stat_time_2d(num_iter_warmup, iter, l,l+1, time_arr.time_backward_d_weights));
     for (int l=0;l<layer-1;l++)
         printf("\tbackward feats (%4d): %.4fs\n", l, avg_stat_time_2d(num_iter_warmup, iter, l,l+1, time_arr.time_backward_d_feats));
-    printf("\ttotal  iteration     : %.4fs\n", avg_stat_time_1d(num_iter_warmup, iter, time_arr.time_tot));  
+    printf("\ttotal  iteration     : %.4fs\n", avg_stat_time_1d(num_iter_warmup, iter, time_arr.time_tot));
 }
 
 
-void parse_args(int argc, char* argv[], char *&data, int &num_itr, int &num_thread, int &num_layer, int &size_subg, 
+void parse_args(int argc, char* argv[], char *&data, int &num_itr, int &num_thread, int &num_layer, int &size_subg,
     int &size_frontier, int &size_hid, double &rate_learn, bool &is_sigmoid) {
     if (argc <= 4) {
         printf("Usage: ./train data num_itr num_thread type_loss size_hid num_layer size_subg size_frontier rate_learn\n");
@@ -114,17 +114,20 @@ void load_data(char *data, s_data2d_sp &adj_full, s_data2d_sp &adj_train,
 
     char file_adj_train_indices[1024],file_adj_train_indptr[1024],file_adj_full_indices[1024],file_adj_full_indptr[1024];
     char file_node_test[1024],file_node_train[1024],file_node_val[1024],file_input[1024],file_output[1024],file_dims[1024];
-  
-    snprintf(file_dims,1024,"../data_cpp/%s/dims.bin",data);
-    snprintf(file_adj_train_indices,1024,"../data_cpp/%s/adj_train_indices.bin",data);
-    snprintf(file_adj_train_indptr,1024,"../data_cpp/%s/adj_train_indptr.bin",data);
-    snprintf(file_adj_full_indices,1024,"../data_cpp/%s/adj_full_indices.bin",data);
-    snprintf(file_adj_full_indptr,1024,"../data_cpp/%s/adj_full_indptr.bin",data);
-    snprintf(file_node_train,1024,"../data_cpp/%s/node_train.bin",data);
-    snprintf(file_node_test,1024,"../data_cpp/%s/node_test.bin",data);
-    snprintf(file_node_val,1024,"../data_cpp/%s/node_val.bin",data);
-    snprintf(file_input,1024,"../data_cpp/%s/feats_norm_col.bin",data);
-    snprintf(file_output, 1024,"../data_cpp/%s/labels_col.bin",data);
+
+    std::string path="/srv/scratch/ogb/datasets/cb/nodeproppred/";
+    path.append(data);
+    path.append("/GraphSAINT-C++");
+    snprintf(file_dims,1024,"%s/dims.bin",path);
+    snprintf(file_adj_train_indices,1024,"%s/adj_train_indices.bin", path);
+    snprintf(file_adj_train_indptr,1024,"%s/adj_train_indptr.bin", path);
+    snprintf(file_adj_full_indices,1024,"%s/adj_full_indices.bin", path);
+    snprintf(file_adj_full_indptr,1024,"%s/adj_full_indptr.bin", path);
+    snprintf(file_node_train,1024,"%s/node_train.bin", path);
+    snprintf(file_node_test,1024,"%s/node_test.bin", path);
+    snprintf(file_node_val,1024,"%s/node_val.bin", path);
+    snprintf(file_input,1024,"%s/feats_norm_col.bin", path);
+    snprintf(file_output, 1024,"%s/labels_col.bin", path);
     t_idx dims[11];
     std::ifstream ifs;
 
@@ -174,7 +177,7 @@ void load_data(char *data, s_data2d_sp &adj_full, s_data2d_sp &adj_train,
     ifs.open(file_node_val,std::ios::binary|std::ios::in);
     ifs.read((char*)node_val.arr,sizeof(t_idx)*dims[6]);
     ifs.close();
-    
+
     input.arr=new t_data[dims[7]*dims[8]];
     input.dim1 = dims[7];
     input.dim2 = dims[8];
@@ -206,4 +209,3 @@ void free_data2d_sp(s_data2d_sp adj) {
     _free(adj.indptr);
     _free(adj.arr);
 }
-

@@ -26,7 +26,7 @@
 #define ADAM_LR 0.05
 #define ADAM_BETA1 0.9
 #define ADAM_BETA2 0.999
-#define ADAM_EPSILON 0.00000001  
+#define ADAM_EPSILON 0.00000001
 
 #define OP_DENSE 'a'
 #define OP_SPARSE 'b'
@@ -39,7 +39,7 @@
 #define OP_SIGMOID 'i'
 #define OP_SOFTMAX 'j'
 
-#define USE_MKL
+//#define USE_MKL
 #include <cstddef>
 #include <cstdlib>
 #ifdef USE_MKL

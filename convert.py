@@ -7,8 +7,13 @@ import os
 from networkx.readwrite import json_graph
 
 dataset_str=sys.argv[1]
-baseline_str='data.ignore/'+dataset_str+'/'
-dataset_str='data/'+dataset_str+'/'
+#baseline_str='data.ignore/'+dataset_str+'/'
+#dataset_str='data/'+dataset_str+'/'
+prefix='/srv/scratch/ogb/datasets/cb/nodeproppred/'
+baseline_str=prefix+dataset_str+'/GraphSAINT-C++/'
+dataset_str= prefix+dataset_str+'/GraphSAINT/'
+print("loading from " + dataset_str)
+print("writing to " + baseline_str)
 if not os.path.exists(baseline_str[:-1]):
     os.mkdir(baseline_str[:-1])
 
@@ -32,7 +37,7 @@ for edge in data['links']:
     edge['target']=int(edge['target'])
 with open(baseline_str+'G.json','w') as f:
     json.dump(data,f)
- 
+
 
 # id_map.json
 id_map={}
