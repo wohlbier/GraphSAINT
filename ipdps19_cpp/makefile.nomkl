@@ -2,8 +2,8 @@ CC=g++
 IDIR=./include
 ODIR=./obj
 CFLAGS=-I${IDIR} -fopenmp -pthread -Wall --std=c++11
-#CFLAGS+=-O3
-CFLAGS+=-g -O0
+CFLAGS+=-O3
+#CFLAGS+=-g -O0
 
 _DEPS=global.h optm.h		# global dependencies
 DEPS=$(patsubst %,$(IDIR)/%,$(_DEPS))

@@ -117,17 +117,17 @@ void load_data(char *data, s_data2d_sp &adj_full, s_data2d_sp &adj_train,
 
     std::string path="/srv/scratch/ogb/datasets/cb/nodeproppred/";
     path.append(data);
-    path.append("/GraphSAINT-C++");
-    snprintf(file_dims,1024,"%s/dims.bin",path);
-    snprintf(file_adj_train_indices,1024,"%s/adj_train_indices.bin", path);
-    snprintf(file_adj_train_indptr,1024,"%s/adj_train_indptr.bin", path);
-    snprintf(file_adj_full_indices,1024,"%s/adj_full_indices.bin", path);
-    snprintf(file_adj_full_indptr,1024,"%s/adj_full_indptr.bin", path);
-    snprintf(file_node_train,1024,"%s/node_train.bin", path);
-    snprintf(file_node_test,1024,"%s/node_test.bin", path);
-    snprintf(file_node_val,1024,"%s/node_val.bin", path);
-    snprintf(file_input,1024,"%s/feats_norm_col.bin", path);
-    snprintf(file_output, 1024,"%s/labels_col.bin", path);
+    path.append("/GraphSAINT-C++/");
+    snprintf(file_dims,1024,"%s/dims.bin",path.c_str());
+    snprintf(file_adj_train_indices,1024,"%s/adj_train_indices.bin", path.c_str());
+    snprintf(file_adj_train_indptr,1024,"%s/adj_train_indptr.bin", path.c_str());
+    snprintf(file_adj_full_indices,1024,"%s/adj_full_indices.bin", path.c_str());
+    snprintf(file_adj_full_indptr,1024,"%s/adj_full_indptr.bin", path.c_str());
+    snprintf(file_node_train,1024,"%s/node_train.bin", path.c_str());
+    snprintf(file_node_test,1024,"%s/node_test.bin", path.c_str());
+    snprintf(file_node_val,1024,"%s/node_val.bin", path.c_str());
+    snprintf(file_input,1024,"%s/feats_norm_col.bin", path.c_str());
+    snprintf(file_output, 1024,"%s/labels_col.bin", path.c_str());
     t_idx dims[11];
     std::ifstream ifs;
 
