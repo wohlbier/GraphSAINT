@@ -2,7 +2,7 @@
 
 Hanqing Zeng*, Hongkuan Zhou*, Ajitesh Srivastava, Rajgopal Kannan, Viktor Prasanna
 
-#### IMPORTANT: This a self-contained directory for the C++ implementation of our parallel algorithm proposed in IEEE/IPDPS '19 (journal version: JPDC 2021). If you are only interested in the GraphSAINT minibatch algorithm itself (ICLR '20), but not the parallelization techniques, please ignore this directory. 
+#### IMPORTANT: This a self-contained directory for the C++ implementation of our parallel algorithm proposed in IEEE/IPDPS '19 (journal version: JPDC 2021). If you are only interested in the GraphSAINT minibatch algorithm itself (ICLR '20), but not the parallelization techniques, please ignore this directory.
 
 
 **Contact**
@@ -11,7 +11,7 @@ Hanqing Zeng (zengh@usc.edu), Hongkuan Zhou (hongkuaz@usc.edu)
 
 **Updates**
 
-* 2021/02/07: Fix a bug in forward / backward prop for different dimensions. 
+* 2021/02/07: Fix a bug in forward / backward prop for different dimensions.
 
 
 
@@ -19,7 +19,7 @@ Hanqing Zeng (zengh@usc.edu), Hongkuan Zhou (hongkuaz@usc.edu)
 
 ### Default: MKL-based
 
-We rely on Intel MKL for optimized execution of dense matrix multiplication and we require compilation using Intel icc. The parallelization of sampler and subgraph feature aggregation are via OpenMP (provided with icc). You can install Intel Parallel Studio (which includes MKL, icc and OpenMP) following instructions on [this page](https://software.intel.com/en-us/get-started-with-mkl-for-linux). Students can obtain a free license for the Parallel Studio. 
+We rely on Intel MKL for optimized execution of dense matrix multiplication and we require compilation using Intel icc. The parallelization of sampler and subgraph feature aggregation are via OpenMP (provided with icc). You can install Intel Parallel Studio (which includes MKL, icc and OpenMP) following instructions on [this page](https://software.intel.com/en-us/get-started-with-mkl-for-linux). Students can obtain a free license for the Parallel Studio.
 Below are the versions we have tested:
 
 * icc >= 19.0.5.281
@@ -37,16 +37,16 @@ Finally, run from the current directory:
 make
 ```
 
-Now you are ready to perform parallel GNN training (use GraphSAGE as the backbone architecture). 
+Now you are ready to perform parallel GNN training (use GraphSAGE as the backbone architecture).
 
 If the above does not work, you may need to set other environment variables. See this [script](https://software.intel.com/en-us/mkl-macos-developer-guide-setting-environment-variables) provided by Intel.
 
-### Alternative: Non-MKL based (Not recommended: training would be much slower in this case) 
+### Alternative: Non-MKL based (Not recommended: training would be much slower in this case)
 
 If speed is not critical to you and you just want to check the functionality without going through the trouble of installing MKL, ICC, etc., you can also use the non-MKL compilation. To do this:
 
-* Go to `global.h` and comment out line 42 (`#define USE_MKL`). 
-* Replace the `makefile` with `makefile.nomkl`. 
+* Go to `global.h` and comment out line 42 (`#define USE_MKL`).
+* Replace the `makefile` with `makefile.nomkl`.
 * `make` in terminal
 
 
@@ -86,14 +86,14 @@ Eleven 32-bit integers, which specify the dimensions of various tensors stored i
 
 (^) **Note**: While length of `adj_train_indptr` equals number of nodes in the full graph plus 1, the training sampler will NOT obtain any node or edge information on the validation/test sets. The reasons are that:
 * We remove all edges (u,v) such that u or v belongs to the validation/test sets.
-* The initial frontier of the sampler are selected from the set of training nodes. 
+* The initial frontier of the sampler are selected from the set of training nodes.
 
 
 #### `adj_train_indices.bin`
 
 1D array of type int32. The `indices` array of the sparse `adj_train` (in CSR format).
 
-The training adjacency matrix is of shape `|V|` by `|V|`, where `V` is the set of all nodes (training + validation + test). However, an element in `adj_train` is 1 if and only if there is an edge whose both end points are training nodes. The rest elements are all 0. 
+The training adjacency matrix is of shape `|V|` by `|V|`, where `V` is the set of all nodes (training + validation + test). However, an element in `adj_train` is 1 if and only if there is an edge whose both end points are training nodes. The rest elements are all 0.
 
 
 #### `adj_train_indptr.bin`
@@ -104,7 +104,7 @@ The training adjacency matrix is of shape `|V|` by `|V|`, where `V` is the set o
 
 1D array of type int32. The `indices` array of the sparse `adj_full` (in CSR format).
 
-The full adjacency matrix is of shape `|V|` by `|V|`, where `V` is the set of all nodes (training + validation + test). An element in `adj_full` is 1 if there is an edge in the full graph (consisting of training + validation + test nodes). 
+The full adjacency matrix is of shape `|V|` by `|V|`, where `V` is the set of all nodes (training + validation + test). An element in `adj_full` is 1 if there is an edge in the full graph (consisting of training + validation + test nodes).
 
 #### `adj_full_indptr.bin`
 
@@ -112,7 +112,7 @@ The full adjacency matrix is of shape `|V|` by `|V|`, where `V` is the set of al
 
 #### `node_train.bin`
 
-1D array of type int32. It stores node indices of all training nodes. 
+1D array of type int32. It stores node indices of all training nodes.
 
 #### `node_test.bin`
 
@@ -139,11 +139,11 @@ To run the program after compilation, execute:
 ./train <dataset> <num_itr> <num_thread> <type_loss> <size_hid> <num_layer> <size_subg> <size_frontier> <rate_learn>
 ```
 
-where the first 4 arguments are mandatory. If the other arguments are not provided, the program will use the default value set in `./include/global.h`. 
+where the first 4 arguments are mandatory. If the other arguments are not provided, the program will use the default value set in `./include/global.h`.
 
-* Our C++ training by default uses double precision floating point numbers. You can change it by modifying `t_data` in `./include/global.h`. Note that Tensorflow by default may use `float32`, so be sure to make the data type consistent when comparing training speed with Tensorflow. 
-* You can set `<num_thread>` to be the number of physical cores in your system. 
-* `<type_loss>` can be either `sigmoid` or `softmax`, and can affect accuracy significantly if not set correctly. 
+* Our C++ training by default uses double precision floating point numbers. You can change it by modifying `t_data` in `./include/global.h`. Note that Tensorflow by default may use `float32`, so be sure to make the data type consistent when comparing training speed with Tensorflow.
+* You can set `<num_thread>` to be the number of physical cores in your system.
+* `<type_loss>` can be either `sigmoid` or `softmax`, and can affect accuracy significantly if not set correctly.
 * `<num_itr>` specifies number of iterations (NOT number of epochs). We define *one* iteration as a forward+backward pass using *one* subgraph.
 
 Examples:
@@ -160,8 +160,13 @@ On PPI:
 ./train ppi 200 40 sigmoid
 ```
 
-**NOTE**: to get high accuracy, it would be necessary to tweak other hyper-parameters such as learning rate, sample size, dropout (to be supported soon), etc. 
-If accuracy is critical, we recommend you to use the better training algorithm as implemented in the `../graphsaint` directory (see `../README.md` for details). Alternatively, you can also go to [this repo](https://github.com/ZimpleX/gcn-ipdps19) for a Tensorflow implementation of this C++ training algorithm (you may be able to configure hyper-parameters more easily using Tensorflow than using pure C++). 
+```
+./train ogbn_arxiv 100 40 softmax
+```
+
+
+**NOTE**: to get high accuracy, it would be necessary to tweak other hyper-parameters such as learning rate, sample size, dropout (to be supported soon), etc.
+If accuracy is critical, we recommend you to use the better training algorithm as implemented in the `../graphsaint` directory (see `../README.md` for details). Alternatively, you can also go to [this repo](https://github.com/ZimpleX/gcn-ipdps19) for a Tensorflow implementation of this C++ training algorithm (you may be able to configure hyper-parameters more easily using Tensorflow than using pure C++).
 
 ## Extensions
 
@@ -181,7 +186,7 @@ booktitle={2019 IEEE International Parallel and Distributed Processing Symposium
 title={Accurate, Efficient and Scalable Graph Embedding},
 year={2019},
 month={May},
-doi={10.1109/IPDPS.2019.00056}, 
+doi={10.1109/IPDPS.2019.00056},
 }
 ```
 
@@ -201,6 +206,6 @@ author = {Hanqing Zeng and Hongkuan Zhou and Ajitesh Srivastava and Rajgopal Kan
 
 **TODO**
 
-* The current C++ code implements the algorithm described in our [IEEE/IPDPS](https://ieeexplore.ieee.org/document/8820993) paper, which is a 'premature' version of our [GraphSAINT](https://openreview.net/forum?id=BJe8pkHFwS) algorithm. The major differences are that this C++ version does not perform normalization, and currently only supports Frontier (or MRW) sampling. We will update our code to be consistent with the GraphSAINT version. 
-* The current C++ version does not support dropout yet. We should be able to support dropout easily given the current code framework. 
-* We will modify the C++ version so that it shares the same interface with the python+Tensorflow version. i.e., users should be able to use the same `yml` file to configure GNN architecture / hyper-parameters. Conversion of data formats should take place internally during runtime. 
+* The current C++ code implements the algorithm described in our [IEEE/IPDPS](https://ieeexplore.ieee.org/document/8820993) paper, which is a 'premature' version of our [GraphSAINT](https://openreview.net/forum?id=BJe8pkHFwS) algorithm. The major differences are that this C++ version does not perform normalization, and currently only supports Frontier (or MRW) sampling. We will update our code to be consistent with the GraphSAINT version.
+* The current C++ version does not support dropout yet. We should be able to support dropout easily given the current code framework.
+* We will modify the C++ version so that it shares the same interface with the python+Tensorflow version. i.e., users should be able to use the same `yml` file to configure GNN architecture / hyper-parameters. Conversion of data formats should take place internally during runtime.

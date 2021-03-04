@@ -13,8 +13,11 @@ else:
 
 for dataset in datasets:
     print('start ',dataset)
-    baseline_str='../data.cpp/'+dataset+'/'
-    dataset_str='../data/'+dataset+'/'
+    base = "/srv/scratch/ogb/datasets/cb/nodeproppred/"
+    dataset_str = base + dataset + "/GraphSAINT/"
+    baseline_str = base + dataset + "/GraphSAINT-C++/"
+    #baseline_str='../data.cpp/'+dataset+'/'
+    #dataset_str='../data/'+dataset+'/'
     if not os.path.exists(baseline_str[:-1]):
         os.mkdir(baseline_str[:-1])
 
@@ -32,9 +35,16 @@ for dataset in datasets:
         for i in range(len(class_map)):
             class_map_np[i,class_map[str(i)]]=1
     else:
-        class_map_np=np.zeros((len(class_map),len(class_map['0'])))
+        num_classes = 0
+        for k,v in class_map.items():
+            num_classes = max(num_classes, v)
+
+        num_classes += 1
+        print("num_classes: " + str(num_classes))
+        class_map_np=np.zeros((len(class_map),num_classes))
         for i in range(len(class_map)):
-            class_map_np[i]=class_map[str(i)]
+            class_map_np[i,class_map[str(i)]]=1
+
     # import pdb; pdb.set_trace();
 
     dims=np.zeros((11,))
@@ -51,9 +61,15 @@ for dataset in datasets:
     dims[10]=class_map_np.shape[1]
     dims.astype(np.int32).tofile(baseline_str+'dims.bin')
 
-    adj_train.indices.astype(np.int32).tofile(baseline_str+'adj_train_indices.bin')
-    adj_train.indptr.astype(np.int32).tofile(baseline_str+'adj_train_indptr.bin')
-    adj_full.indices.astype(np.int32).tofile(baseline_str+'adj_full_indices.bin')
+    adj_train.indices.astype(np.int32).tofile(
+        baseline_str+'adj_train_indices.bin'
+    )
+    adj_train.indptr.astype(np.int32).tofile(
+        baseline_str+'adj_train_indptr.bin'
+    )
+    adj_full.indices.astype(np.int32).tofile(
+        baseline_str+'adj_full_indices.bin'
+    )
     adj_full.indptr.astype(np.int32).tofile(baseline_str+'adj_full_indptr.bin')
     np.array(role['tr']).astype(np.int32).tofile(baseline_str+'node_train.bin')
     np.array(role['te']).astype(np.int32).tofile(baseline_str+'node_test.bin')
