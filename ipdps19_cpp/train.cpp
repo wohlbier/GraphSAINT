@@ -25,8 +25,8 @@ char *data;
 int num_itr;
 int num_thread;
 
-void forward_GNN(Model &model, s_data2d_sp &adj, 
-                 s_idx1d_ds &v_subg, s_data2d_ds &feat_fullg, 
+void forward_GNN(Model &model, s_data2d_sp &adj,
+                 s_idx1d_ds &v_subg, s_data2d_ds &feat_fullg,
                  s_idx2d_ds &label_subg, s_stat_acc &loss_acc, s_idx1d_ds v_masked=s_idx1d_ds()) {
     int num_layer = model.layer_SAGE.size();
     // setup layer-1 input
@@ -40,7 +40,7 @@ void forward_GNN(Model &model, s_data2d_sp &adj,
     model.layer_loss.forward(label_subg, loss_acc, v_masked);
 }
 
-void backward_GNN(Model &model, s_data2d_sp &adj, s_data2d_sp &adj_trans, 
+void backward_GNN(Model &model, s_data2d_sp &adj, s_data2d_sp &adj_trans,
                   s_idx2d_ds &label_subg, s_stat_acc &loss_acc) {
     int num_layer = model.layer_SAGE.size();
     model.layer_loss.backward(label_subg, model.layer_dense.grad_in);
@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
     lookup_labels(node_test, label_true, label_true_test);
     int num_subg_remain = 0;
     // ======================
-    // SETUP THREADS 
+    // SETUP THREADS
     // ======================
     omp_set_num_threads(num_thread);
     omp_set_dynamic(0);
@@ -101,8 +101,8 @@ int main(int argc, char* argv[]) {
     mkl_set_dynamic(0);
 #endif
 
-    #pragma omp parallel default (shared) 
-    {   
+    #pragma omp parallel default (shared)
+    {
         int ompTid = omp_get_thread_num();
         int proc_id = ompTid;
         bind_to_proc(proc_id);
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
     model.layer_dense = Layer_dense(0,size_g,num_thread,num_cls,dim_hid,lr);
     model.layer_loss = Layer_loss(0,size_g,num_thread,num_cls,is_sigmoid);
     // ========================
-    // TRAIN LOOP 
+    // TRAIN LOOP
     // ========================
     time_ops[OP_DENSE] = 0.;
     time_ops[OP_SPARSE] = 0.;
@@ -135,11 +135,10 @@ int main(int argc, char* argv[]) {
     time_ops[OP_SOFTMAX] = 0.;
 
     s_stat_acc loss_acc;
-    double time_ep = 0;
     for (int itr=0; itr<num_itr; itr++) {
         // validation
         if (itr%EVAL_INTERVAL==0 && itr!=0) {
-            forward_GNN(model, adj_full, node_all, input, 
+            forward_GNN(model, adj_full, node_all, input,
                         label_true_val, loss_acc, node_val);
             printf("Evaluation f1_mic: %f, f1_mac: %f\n", loss_acc.f1_mic, loss_acc.f1_mac);
         }
@@ -184,5 +183,3 @@ int main(int argc, char* argv[]) {
                 label_true_test, loss_acc, node_test);
     printf("Testing f1_mic: %f, f1_mac: %f\n", loss_acc.f1_mic, loss_acc.f1_mac);
 }
-
-

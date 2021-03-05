@@ -69,13 +69,25 @@ extern bool is_sigmoid;
 typedef double t_data;      // use this type to denote all the values (e.g., weights, feature values, ...)
 typedef int t_idx;          // use this type to denote all the indices (e.g., index of V, index of E, ...)
 
-
+#include <cstdio>
 /**** data structures ****/
 struct s_idx1d_ds {
     s_idx1d_ds() : dim1(0), arr(NULL) {};
     s_idx1d_ds(t_idx dim1_) : dim1(dim1_) {
-            arr = (t_idx*)_malloc(dim1*sizeof(t_idx));
-            memset(arr, 0, dim1*sizeof(t_idx));};
+        arr = (t_idx*)_malloc(dim1*sizeof(t_idx));
+        memset(arr, 0, dim1*sizeof(t_idx));};
+    s_idx1d_ds(const s_idx1d_ds& s) {
+        dim1 = s.dim1;
+        arr = (t_idx*)_malloc(dim1*sizeof(t_idx));
+        for (int i=0; i<dim1; ++i) arr[i] = s.arr[i];
+    };
+    s_idx1d_ds& operator=(const s_idx1d_ds& s) {
+        dim1 = s.dim1;
+        arr = (t_idx*)_malloc(dim1*sizeof(t_idx));
+        for (int i=0; i<dim1; ++i) arr[i] = s.arr[i];
+        return *this;
+    };
+    ~s_idx1d_ds() { if (arr) _free(arr); }
     t_idx dim1;
     t_idx *arr;
 };
@@ -85,6 +97,18 @@ struct s_data1d_ds {
     s_data1d_ds(t_idx dim1_) : dim1(dim1_) {
             arr = (t_data*)_malloc(dim1*sizeof(t_data));
             memset(arr, 0, dim1*sizeof(t_data));};
+    s_data1d_ds(const s_data1d_ds& s) {
+        dim1 = s.dim1;
+        arr = (t_data*)_malloc(dim1*sizeof(t_data));
+        for (int i=0; i<dim1; i++) arr[i] = s.arr[i];
+    }
+    s_data1d_ds& operator=(const s_data1d_ds& s) {
+        dim1 = s.dim1;
+        arr = (t_data*)_malloc(dim1*sizeof(t_data));
+        for (int i=0; i<dim1; i++) arr[i] = s.arr[i];
+        return *this;
+    }
+    ~s_data1d_ds() { if (arr) _free(arr); }
     t_idx dim1;
     t_data *arr;
 };
@@ -99,6 +123,32 @@ struct s_idx2d_sp {
             memset(indptr, 0, (num_v+1)*sizeof(t_idx));
             memset(indices, 0, num_e*sizeof(t_idx));
             memset(arr, 0, num_e*sizeof(t_idx));};
+    s_idx2d_sp(const s_idx2d_sp& s) {
+        num_v = s.num_v;
+        num_e = s.num_e;
+        indptr = (t_idx*)_malloc((num_v+1)*sizeof(t_idx));
+        indices = (t_idx*)_malloc(num_e*sizeof(t_idx));
+        arr = (t_idx*)_malloc(num_e*sizeof(t_idx));
+        for (int i=0; i< num_v+1; i++) indptr[i] = s.indptr[i];
+        for (int i=0; i< num_e; i++) indices[i] = s.indices[i];
+        for (int i=0; i< num_e; i++) arr[i] = s.arr[i];
+    }
+    s_idx2d_sp& operator=(const s_idx2d_sp& s) {
+        num_v = s.num_v;
+        num_e = s.num_e;
+        indptr = (t_idx*)_malloc((num_v+1)*sizeof(t_idx));
+        indices = (t_idx*)_malloc(num_e*sizeof(t_idx));
+        arr = (t_idx*)_malloc(num_e*sizeof(t_idx));
+        for (int i=0; i< num_v+1; i++) indptr[i] = s.indptr[i];
+        for (int i=0; i< num_e; i++) indices[i] = s.indices[i];
+        for (int i=0; i< num_e; i++) arr[i] = s.arr[i];
+        return *this;
+    }
+    ~s_idx2d_sp() {
+        if (indptr) _free(indptr);
+        if (indices) _free(indices);
+        if (arr) _free(arr);
+    }
     t_idx num_v;    // length of indptr = num_v + 1
     t_idx num_e;
     t_idx *indptr;
@@ -116,6 +166,32 @@ struct s_data2d_sp {
             memset(indptr, 0, (num_v+1)*sizeof(t_idx));
             memset(indices, 0, num_e*sizeof(t_idx));
             memset(arr, 0, num_e*sizeof(t_data));};
+    s_data2d_sp(const s_data2d_sp& s) {
+        num_v = s.num_v;
+        num_e = s.num_e;
+        indptr = (t_idx*)_malloc((num_v+1)*sizeof(t_idx));
+        indices = (t_idx*)_malloc(num_e*sizeof(t_idx));
+        arr = (t_data*)_malloc(num_e*sizeof(t_data));
+        for (int i=0; i< num_v+1; i++) indptr[i] = s.indptr[i];
+        for (int i=0; i< num_e; i++) indices[i] = s.indices[i];
+        for (int i=0; i< num_e; i++) arr[i] = s.arr[i];
+    }
+    s_data2d_sp& operator=(const s_data2d_sp& s) {
+        num_v = s.num_v;
+        num_e = s.num_e;
+        indptr = (t_idx*)_malloc((num_v+1)*sizeof(t_idx));
+        indices = (t_idx*)_malloc(num_e*sizeof(t_idx));
+        arr = (t_data*)_malloc(num_e*sizeof(t_data));
+        for (int i=0; i< num_v+1; i++) indptr[i] = s.indptr[i];
+        for (int i=0; i< num_e; i++) indices[i] = s.indices[i];
+        for (int i=0; i< num_e; i++) arr[i] = s.arr[i];
+        return *this;
+    }
+    ~s_data2d_sp() {
+        if (indptr) _free(indptr);
+        if (indices) _free(indices);
+        if (arr) _free(arr);
+    }
     t_idx num_v;    // length of indptr = num_v + 1
     t_idx num_e;
     t_idx *indptr;
@@ -128,6 +204,20 @@ struct s_idx2d_ds {
     s_idx2d_ds(t_idx dim1_, t_idx dim2_) : dim1(dim1_), dim2(dim2_) {
             arr = (t_idx*)_malloc(dim1*dim2*sizeof(t_idx));
             memset(arr, 0, dim1*dim2*sizeof(t_idx));};
+    s_idx2d_ds(const s_idx2d_ds& s) {
+        dim1 = s.dim1;
+        dim2 = s.dim2;
+        arr = (t_idx*)_malloc(dim1*dim2*sizeof(t_idx));
+        for (int i=0; i<dim1*dim2; ++i) arr[i] = s.arr[i];
+    };
+    s_idx2d_ds& operator=(const s_idx2d_ds& s) {
+        dim1 = s.dim1;
+        dim2 = s.dim2;
+        arr = (t_idx*)_malloc(dim1*dim2*sizeof(t_idx));
+        for (int i=0; i<dim1*dim2; ++i) arr[i] = s.arr[i];
+        return *this;
+    };
+    ~s_idx2d_ds() { if (arr) _free(arr); }
     t_idx dim1;
     t_idx dim2;
     t_idx *arr;    // 1D of dim1 x dim2
@@ -138,6 +228,20 @@ struct s_data2d_ds {
     s_data2d_ds(t_idx dim1_, t_idx dim2_) : dim1(dim1_), dim2(dim2_) {
             arr = (t_data*)_malloc(dim1*dim2*sizeof(t_data));
             memset(arr, 0, dim1*dim2*sizeof(t_data));};
+    s_data2d_ds(const s_data2d_ds& s) {
+        dim1 = s.dim1;
+        dim2 = s.dim2;
+        arr = (t_data*)_malloc(dim1*dim2*sizeof(t_data));
+        for (int i=0; i<dim1*dim2; i++) arr[i] = s.arr[i];
+    }
+    s_data2d_ds& operator=(const s_data2d_ds& s) {
+        dim1 = s.dim1;
+        dim2 = s.dim2;
+        arr = (t_data*)_malloc(dim1*dim2*sizeof(t_data));
+        for (int i=0; i<dim1*dim2; i++) arr[i] = s.arr[i];
+        return *this;
+    }
+    ~s_data2d_ds() { if (arr) _free(arr); }
     t_idx dim1;
     t_idx dim2;
     t_data *arr;     // 1D of dim1 x dim2

@@ -30,7 +30,7 @@ void ADAM::update(std::vector<s_data2d_ds*> weights, std::vector<s_data2d_ds*> d
                   std::vector<s_data1d_ds*> biases, std::vector<s_data1d_ds*> d_biases)
 {
     // asertions
-    for (int j=0; j<weights.size(); j++) {
+    for (size_t j=0; j<weights.size(); j++) {
         assert(weights[j]->dim1 == d_weights[j]->dim1);
         assert(weights[j]->dim2 == d_weights[j]->dim2);
         assert(weights[j]->dim1 == ss2d[j].dim1);
@@ -40,7 +40,7 @@ void ADAM::update(std::vector<s_data2d_ds*> weights, std::vector<s_data2d_ds*> d
     double denom1 = 1-powf(beta1,t);
     double denom2 = 1-powf(beta2,t);
     // update 2d parameters
-    for (int i=0; i<weights.size(); i++) {
+    for (size_t i=0; i<weights.size(); i++) {
         int tot_elements = weights[i]->dim1*weights[i]->dim2;
         #pragma omp parallel for
         for (int k=0; k<tot_elements; k++) {
@@ -50,7 +50,7 @@ void ADAM::update(std::vector<s_data2d_ds*> weights, std::vector<s_data2d_ds*> d
         }
     }
     // update 1d parameters
-    for (int i=0; i<biases.size(); i++) {
+    for (size_t i=0; i<biases.size(); i++) {
         int tot_elements = biases[i]->dim1;
         #pragma omp parallel for
         for (int k=0; k<tot_elements; k++) {
@@ -60,5 +60,3 @@ void ADAM::update(std::vector<s_data2d_ds*> weights, std::vector<s_data2d_ds*> d
         }
     }
 }
-
-

@@ -74,7 +74,7 @@ void Layer_SAGE::update_size_subg(int size_subg_, s_data2d_ds &feat_out) {
 }
 
 /*
- * Assume before calling forward, feat_in has already been filled in. 
+ * Assume before calling forward, feat_in has already been filled in.
  * feat_out should be the feat_in of next layer
  */
 void Layer_SAGE::forward(s_data2d_sp subg, s_data2d_ds &feat_out)
@@ -108,7 +108,7 @@ void Layer_SAGE::forward(s_data2d_sp subg, s_data2d_ds &feat_out)
 }
 
 /*
- * Assume before calling backward, grad_in has already been filled in. 
+ * Assume before calling backward, grad_in has already been filled in.
  * grad_out should be the grad_in of previous layer
  * grad_out = d L / d X^(l-1)
  */
@@ -125,8 +125,8 @@ void Layer_SAGE::backward(s_data2d_sp subg, s_data2d_sp subg_trans, s_data2d_ds 
     grad_in_part2.dim2 = grad_in.dim2/2;
     grad_in_part2.arr = grad_in.arr + grad_in_part1.dim1*grad_in_part1.dim2;
     denseMM(feat_in, grad_in_part1, d_weight_self, true);
-    // In the below calculation, we use feat_aggr to store the temporary result for matrix multiplication. 
-    // Therefore, we do not need to allocation any new storage. 
+    // In the below calculation, we use feat_aggr to store the temporary result for matrix multiplication.
+    // Therefore, we do not need to allocation any new storage.
     if (is_order_AX_W) {
         assert(feat_aggr.dim2 == dim_weight_in);        // feat_aggr stores the aggregated, raw feature
         sparseMM(subg, feat_in, feat_aggr, num_thread);                     // feat_aggr = adj X_{in}
@@ -431,7 +431,8 @@ void Layer_loss::f1_score(s_idx2d_ds label, s_stat_acc &loss_acc) {
         }
     }
     // calc accuracy
-    double accuracy_cls(0.), precision_cls(0.), recall_cls(0.), f1_accum(0.);
+    //jgw//double accuracy_cls(0.);
+    double precision_cls(0.), recall_cls(0.), f1_accum(0.);
     t_idx tp_accum(0), fn_accum(0), fp_accum(0), tn_accum(0);
     t_idx tp_cls, fn_cls, fp_cls, tn_cls;
     for (int c=0; c<num_cls; c++)
@@ -452,7 +453,7 @@ void Layer_loss::f1_score(s_idx2d_ds label, s_stat_acc &loss_acc) {
         fp_accum += fp_cls;
         tn_accum += tn_cls;
 
-        accuracy_cls = (double)(tp_cls+tn_cls)/(double)(tp_cls+tn_cls+fp_cls+fn_cls);
+        //jgw//accuracy_cls = (double)(tp_cls+tn_cls)/(double)(tp_cls+tn_cls+fp_cls+fn_cls);
                             //accuracy(tp_cls,tn_cls,fp_cls, fn_cls);
         precision_cls = tp_cls+fp_cls>0 ? (double)tp_cls/(double)(tp_cls+fp_cls) : 0.;
                             //precision(tp_cls,tn_cls,fp_cls,fn_cls);
@@ -462,7 +463,7 @@ void Layer_loss::f1_score(s_idx2d_ds label, s_stat_acc &loss_acc) {
                             //f1(recall_cls,precision_cls);
     }
     double f1_mac = f1_accum/(double)num_cls_mac;
-    double accuracy_mic = (double)(tp_accum+tn_accum)/(double)(tp_accum+tn_accum+fp_accum+fn_accum);
+    //jgw//double accuracy_mic = (double)(tp_accum+tn_accum)/(double)(tp_accum+tn_accum+fp_accum+fn_accum);
                             //accuracy(tp_accum,tn_accum,fp_accum,fn_accum);
     double precision_mic = tp_accum+fp_accum>0 ? (double)tp_accum/(double)(tp_accum+fp_accum) : 0.;
                             //precision(tp_accum,tn_accum,fp_accum,fn_accum);
@@ -502,5 +503,3 @@ void Layer_loss::backward(s_idx2d_ds label, s_data2d_ds &grad_out)
         grad_out.arr[i] /= (float)size_subg;
     }
 }
-
-

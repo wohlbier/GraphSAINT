@@ -18,7 +18,7 @@ using namespace std;
 
 void check_DB(vector<t_idx> &DB0,vector<t_idx> &DB1,vector<t_idx> &DB2,t_idx size, int thread_inter)
 {
-    if (DB0.capacity()<size)
+    if (DB0.capacity()<(size_t)size)
     {
         printf("Thread %d doubling from %ld to %ld.\n",thread_inter,DB0.capacity(),DB0.capacity()*2);
         DB0.reserve(DB0.capacity()*2);
@@ -30,7 +30,7 @@ void check_DB(vector<t_idx> &DB0,vector<t_idx> &DB1,vector<t_idx> &DB2,t_idx siz
     DB2.resize(size);
 }
 
-void sample_frontier(s_data2d_sp adj_train, s_idx1d_ds node_train, s_data2d_sp *&subgs, s_idx1d_ds *&subgs_v, int subgraph_size, int size_frontier) 
+void sample_frontier(s_data2d_sp adj_train, s_idx1d_ds node_train, s_data2d_sp *&subgs, s_idx1d_ds *&subgs_v, int subgraph_size, int size_frontier)
 {
     double tt1=omp_get_wtime();
     printf("Sampling %d subgraphs.\n",num_thread);
@@ -56,7 +56,7 @@ void sample_frontier(s_data2d_sp adj_train, s_idx1d_ds node_train, s_data2d_sp *
         IA1.resize(size_frontier);
         IA2.resize(size_frontier);
         IA3.resize(size_frontier);
-        t_idx *sama=(t_idx*)malloc(sizeof(t_idx)*(1+1));    // intra_thread = 1
+        //t_idx *sama=(t_idx*)malloc(sizeof(t_idx)*(1+1)); // intra_thread = 1
         t_idx choose,neigh_v,newsize;
         set<t_idx> st;
         // #pragma omp for
@@ -92,7 +92,7 @@ void sample_frontier(s_data2d_sp adj_train, s_idx1d_ds node_train, s_data2d_sp *
             choose=-1;
             while (choose==-1)
             {
-                t_idx tmp=rand_r(&myseed)%DB0.size();
+                size_t tmp=rand_r(&myseed)%DB0.size();
                 if (tmp<DB0.size())
                     if (DB0[tmp]!=-1)
                         choose=tmp;
@@ -123,13 +123,13 @@ void sample_frontier(s_data2d_sp adj_train, s_idx1d_ds node_train, s_data2d_sp *
                 // compute prefix sum for the location in shrinked DB
                 IA4.resize(IA0.size());
                 IA4[0]=IA0[0];
-                for (int i=1;i<IA0.size();i++)
+                for (size_t i=1;i<IA0.size();i++)
                     IA4[i]=IA4[i-1]+IA0[i];
                 nDB0.resize(IA4.back());
                 nDB1.resize(IA4.back());
                 nDB2.resize(IA4.back());
                 IA2.assign(IA4.begin(),IA4.end());
-                for (int i=0;i<IA0.size();i++)
+                for (size_t i=0;i<IA0.size();i++)
                 {
                     if (IA1[i]==0)
                         continue;
@@ -145,7 +145,7 @@ void sample_frontier(s_data2d_sp adj_train, s_idx1d_ds node_train, s_data2d_sp *
                 // remap the index in DB2 by compute prefix of IA1 (new idx in IA)
                 IA4.resize(IA1.size());
                 IA4[0]=IA1[0];
-                for (int i=1;i<IA1.size();i++)
+                for (size_t i=1;i<IA1.size();i++)
                     IA4[i]=IA4[i-1]+IA1[i];
                 DB0.assign(nDB0.begin(),nDB0.end());
                 DB1.assign(nDB1.begin(),nDB1.end());
@@ -153,7 +153,7 @@ void sample_frontier(s_data2d_sp adj_train, s_idx1d_ds node_train, s_data2d_sp *
                 for (auto i=DB2.begin();i<DB2.end();i++)
                     *i=IA4[*i-1];
                 t_idx curr=0;
-                for (t_idx i=0;i<IA0.size();i++)
+                for (size_t i=0;i<IA0.size();i++)
                 {
                     if (IA0[i]!=0)
                     {
@@ -184,7 +184,7 @@ void sample_frontier(s_data2d_sp adj_train, s_idx1d_ds node_train, s_data2d_sp *
             }
         }
         double tpost=omp_get_wtime();
-        // st.insert(node_train.arr,node_train.arr+node_train.dim1);        
+        // st.insert(node_train.arr,node_train.arr+node_train.dim1);
         //construct adj of subgraph base on the sampled nodes
         t_idx thread=inter_thread_id;
         if (!subgs_v[thread].arr) delete [] subgs_v[thread].arr;
@@ -209,7 +209,7 @@ void sample_frontier(s_data2d_sp adj_train, s_idx1d_ds node_train, s_data2d_sp *
             curr++;
         }
         subgs[thread].indptr[0]=0;
-        for (int i=0;i<st.size();i++)
+        for (size_t i=0;i<st.size();i++)
         {
             int cnt=0;
             for (int j=adj_train.indptr[lut[i]];j<adj_train.indptr[lut[i]+1];j++)
@@ -237,5 +237,3 @@ void sample_frontier(s_data2d_sp adj_train, s_idx1d_ds node_train, s_data2d_sp *
     printf("Sampling: total time %.8lfs.\n",tt2-tt1);
     return;
 }
-
-
